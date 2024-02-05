@@ -1,0 +1,36 @@
+Article title : Guide de codage pour le langage C++
+Year of publication : ??
+Author(s) : Louis Granger, Martin Bisson, Noureddine Kerzazi and Michel Gagnon
+
+-------------------------------
+Summary : This document is a coding guid for C++ inspired, adapted and translated from Geosoft C++ Programming Style Guidelines ( http://geosoft.no/development/cppstyle.html ). It is here to normalize the coding style. The goal was to put clearly some of the most important items for futur code refactoring.
+
+-------------------------------
+Memory items to remember :
+-1 : lisibility first (if not following makes for better lisibility, do not follow)
+-2 : class names are in PascalCase
+-3 : variable in camelCase
+-4 : constant name is in UPPER_SNAKE
+-5 : methods is camelCase beginning with verb
+-9 : abreviation in minuscule when used in variable
+-12 : generic variable should have their type name in their name
+-13 : either all english or all french
+-14 : temporary variable should have short names whereas long used ones can have longer
+-21 : using plurals for collections of object
+-22 : prefix n should be used for variable indicating a number of object
+-25 : bool method/variable should begin with is/has/must
+-27 : avoiding abreviation
+-29 : negative name (isNot...) should be avoided
+-32 : function should be name after what they return and methods after what they do
+-36 : avoiding long line
+-44 : declared variable should be initialized
+-50 : keeping variables in their use block
+-52 : initializing loop-variable just before loop
+-56 : replacing complex conditionnal expression by temporary bool variable
+-57 : with if-else, if should be the most common case
+-60 : avoid "magic number", constant should be initialized as constant
+-79 : separating logic unit with an empty line
+-80 : separating methods with 3 empty line
+-85 : using only // to comment
+
+
