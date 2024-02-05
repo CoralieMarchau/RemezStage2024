@@ -1,0 +1,28 @@
+Welcome to Remez 1 :
+
+Reminder Remez 1 algorithm can be summarized as follow :
+-Creation of a discretized set of point.
+-Loop until stopping condition
+  -Step 1 : Find the best polynomial for the points in the set
+  -Step 2 : Find the point where there is the worst error between the polynomial and the function
+
+There is different possible stopping condition like :
+-A set number of turn
+-A difference of the error found between the two looped steps
+-Not finding new points to add to the discretized set
+
+Here the three are used. The first is a security in case of bug. Let imagine that somehow the n+1th polynomial isn't better than the nth despite new points being found, it would still stop the program and allow for final graphs to be present for more information to analyze. The second is due to the two difference converging toward e* the best error we can hope for with the choosen parameters. The last one is here because we consider than for a discretized set, there is only one best polynomial. So searching with the same set would give the same polynomial.
+
+-Remez 1 Univariate : DONE (see remez-ver2)
+3 Versions : Exchange, Plus, Basic.
+The difference between those version is in the second step of the Remez 1 Algorithm.
+
+For Basic, we find the x for which the function |P(a,x)-f(x)| is at the biggest extremum and we add this x in the discretized set.
+For Exchange, we ensure to have as little point in the set as possible (n+2 with n = degree of approximation). For that, the new found point will be exchanged with one in the set. 
+For Plus, instead of finding one x, we use the derived variable to find all extremum and had them in the set.
+
+-Remez 1 Multivariate : WIP (see version4)
+
+
+Necessary installment :
+SOPLEX, IBEX, GLPK, libz, sciplot and all necessary installments for those libraries.

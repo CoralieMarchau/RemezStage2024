@@ -1,0 +1,484 @@
+/*-----------------------------------------------------------------*/
+/* DEPENDENCIES */
+/*-----------------------------------------------------------------*/
+#include "ibex.h"
+#include <soplex.h>
+#include "cmath"
+#include <vector>
+#include <stdio.h>
+#include <stdlib.h>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <unistd.h>  
+#include <sciplot/sciplot.hpp>
+#include <string>
+#include <gmp.h>
+
+using namespace std;
+using namespace ibex;
+using namespace soplex;
+using namespace sciplot;
+/*-----------------------------------------------------------------*/
+/* CUSTOM OBJECTS */
+/*-----------------------------------------------------------------*/
+
+//Description of the multivariate polynomial
+struct Multivariate_Polynomiale {
+  std::vector<double> a; //Value of a
+  std::vector<double>(*phi)(std::vector<double> x, int degree);
+  std::vector<string> (*derivatedPhi)(std::vector<double> a, int nbX, int degree);
+  int degree;
+} MultivariatepolynomialDescription;
+
+//Description of the function to approximate
+struct Multivariate_functionDescription {
+  string functionString; // With the unknown x1 and x2
+  int nbX;
+  std::vector<string> derivedFunctionStrings;
+  std::vector<std::vector<double>> bornersVar;
+  double (*f)(std::vector<double> x); // Must correspond to the string version
+} MultivariatefunctionDescription;
+
+struct Multivariate_RemezIParameters {
+  struct Multivariate_Polynomiale poly;
+  struct Multivariate_functionDescription fdesc; //description of the function to approximate
+  int approximationDegree; //a_i with i in [0 ; approximationDegree], as many i as nbVar
+  int sizeD0; //Advised to be >= to approximationDegree+2 for quickest approximation
+  int maxNbTurns; //Failsafe
+  double approximationResult;
+  double approximationPoints; 
+} Multivariate_RemezIParameters;
+
+//Results of RemezI multivariate for comparisons and graphs
+struct Multivariate_RemezIResult {
+  int nbTurns;
+  int currentTurn;
+  std::vector<double> errorStep1;
+  std::vector<double> errorStep2;
+  string path;
+} Multivariate_RemezIResult;
+
+/*-----------------------------------------------------------------*/
+/* FUNCTIONS DECLARATION */
+/*-----------------------------------------------------------------*/
+struct Multivariate_functionDescription initialize_fdesc(string fString, std::vector<string> df, double (*f)(std::vector<double> x), std::vector<std::vector<double>> bornersVar);
+struct Multivariate_RemezIParameters initialize_remezdesc(struct Multivariate_functionDescription fdesc, int degree, int sizeD0, int nbTurns);
+struct Multivariate_Polynomiale initialize_poly(std::vector<double>(*phi)(std::vector<double> x, int degree), std::vector<string> (*derivatedPhi)(std::vector<double> a, int nbX, int degree));
+std::vector<std::vector<double>> step0(int nbX, struct Multivariate_RemezIParameters remezdesc, struct Multivariate_functionDescription fdesc);
+string createPath();
+std::vector<double> step1(std::vector<std::vector<double>> D, struct Multivariate_functionDescription fdesc, struct Multivariate_RemezIParameters remezdesc, struct Multivariate_Polynomiale poly);
+void write_introduction(string path, struct Multivariate_RemezIParameters remezdesc);
+void writeD(struct Multivariate_RemezIParameters remezdesc, std::vector<std::vector<double>> D, string path);
+double step2(std::vector<double> A, struct Multivariate_RemezIParameters remezdesc, string path);
+void createModelStep2(std::vector<double> A, struct Multivariate_RemezIParameters remezdesc, string path);
+/*-----------------------------------------------------------------*/
+/* FUNCTIONS TO APPROXIMATE */
+/*-----------------------------------------------------------------*/
+//Didactical Example
+
+double f0(std::vector<double> x) {
+  return pow(x[0],2) + pow(x[1],2);
+}
+
+struct Multivariate_functionDescription initializeF0(){
+  return initialize_fdesc("x1^2 + x2^2",{"2*x1","2*x2", "0"},f0, {{0,1},{0,1}});
+}
+
+//Reemtsen Examples
+double f1(std::vector<double> x) {
+  return log(x[0]+x[1])*sin(x[0]);
+}
+
+struct Multivariate_functionDescription initializeF1(){
+  return initialize_fdesc("log(x1+x2)*sin(x1)",{"sin(x1)+log(x1+x2)*cos(x1)*(x1+x2)","sin(x1)/log(x1+x2)"},f1, {{0,1},{1, 2.5}});
+}
+
+double f2(std::vector<double> x) {
+  return pow((1+x[0]), x[1]);
+}
+struct Multivariate_functionDescription initializeF2(){
+  return initialize_fdesc("(1+x1)^(x2)",{"x2*(1+x1)^(x2-1)","(1+x1)^x2*ln(1+x1)"},f2, {{0,1},{1, 2.5}});
+}
+
+double f3(std::vector<double> x) {
+  return cos(x[2])*pow(1+x[0],x[1]);
+}
+struct Multivariate_functionDescription initializeF3(){
+  return initialize_fdesc("cos(x3)*(1+x1)^(x2)",{"x2*cos(x3)*(1+x1)^(x2-1)"," cos(x3)*(1+x1)^(x2)*ln(1+x1)","(-sin(x3)*(1+x1)^(x2))"},f3, {{0,1},{1, 2},{0,1}});
+}
+
+double f4(std::vector<double> x) {
+  return 1/(x[0]+2*x[1]+4);
+}
+struct Multivariate_functionDescription initializeF4(){
+  return initialize_fdesc("1/(x1+2*x2+4)",{"-1/((x1+2*x2+4)^2)","-1/((x1+2*x2+4)^2)"},f4, {{-1,1},{-1,1}});
+}
+
+double f5(std::vector<double> x) {
+  return exp(pow(x[0],2)+x[0]*x[1]);
+}
+struct Multivariate_functionDescription initializeF5(){
+  return initialize_fdesc("exp(x1^2 + x1*x2)",{"exp(x1^2 + x1*x2)*(2x+x2)", "exp(x1^2 + x1*x2)*(x)"}, f5, {{-1,1},{-1,1}});
+}
+
+double f6_7(std::vector<double> x) {
+  return sqrt(x[0]+2*x[1]+4);
+}
+struct Multivariate_functionDescription initializeF6_7(){
+  return initialize_fdesc("sqrt(x1+2*x2+4)",{"1/2*sqrt(x1+2*x2+4)","1/sqrt(x1+2*x2+4)"},f6_7, {{-1,1},{-1,1}});
+}
+
+double f8(std::vector<double> x) {
+  return abs(log((x[0]*x[1]+1)/(x[0]+0.5)))*pow(x[1],(x[2]+1)/2);
+}
+struct Multivariate_functionDescription initializeF8(){
+  return initialize_fdesc("",{},f8, {{0,1},{0,1},{0,1}});
+}
+
+/*-----------------------------------------------------------------*/
+/* BASICS */
+/*-----------------------------------------------------------------*/
+
+double P(struct Multivariate_Polynomiale A , std::vector<double> x){
+  double y = 0;
+  std::vector<double> p = A.phi(x, A.a.size());
+  for(int i = 0 ; i < A.a.size(); i++){
+    y += A.a[i] * p[i];;
+  }
+  return y;
+}
+
+double error(struct Multivariate_Polynomiale A , std::vector<double> x, double (*f)(std::vector<double> x)){
+  return abs(f(x)-P(A, x));
+}
+
+/*-----------------------------------------------------------------*/
+/* POLYNOMIALS */
+/*-----------------------------------------------------------------*/
+
+std::vector<double> phiBasique(std::vector<double> x, int degree){
+  std::vector<double> p = {1};
+  std::vector<double> temp = {};
+  std::vector<double> prev = {1};
+  for(int i = 1; i<=degree; i=i+1){
+    for(int j = 0; j<x.size(); j=j+1){
+      for(int k = 0; k<prev.size(); k++){
+        temp.push_back(prev[k]*x[j]);
+      }
+    } 
+    for(int j = 0; j<temp.size(); j++){
+      p.push_back(temp[j]);
+    }
+    prev = temp;
+    temp = {};
+  }
+  return p;
+}
+
+std::vector<string> phiBasiqueDerivated(std::vector<double> a, int nbX, int degree){
+  std::vector<std::vector<double>> powOfX = {{1}};
+  std::vector<std::vector<double>> temp = {std::vector<double>(nbX, 0.0)};
+  std::vector<std::vector<double>>  prev = {{1}};
+  
+  for(int i = 1; i<degree; i=i+1){
+   for(int j = 0; j<nbX; j=j+1){
+      for(int k = 0; k<prev.size(); k++){
+	temp.push_back(prev[k]);
+	temp[temp.size()-1][j] += 1; 
+      }
+    }
+    for(int j = 0; j<temp.size(); j++){
+      powOfX.push_back(temp[j]);
+    }
+    prev = temp;
+    std::fill(temp[0].begin(), temp[0].end(), 0.0);
+    temp = {temp[0]};
+  }
+  string str;
+  std::vector<string> result;
+  for(int k = 0; k<nbX; k=k+1){
+    str = "";
+    for(int i = 0; i<powOfX.size(); i++){
+      if(powOfX[i][k] >= 1){
+        str = "2*" ;
+        str += a[i];
+        for(int j = 0; j<powOfX[i].size(); j++){
+          if(powOfX[i][j]!=0){
+            str += "x" + (j+1);
+          }
+        }
+      }
+      result.push_back(str);
+      str = "";
+    }
+  }
+  
+  return result;
+  
+}
+
+struct Multivariate_Polynomiale initializePhiBasic(){
+  return initialize_poly(phiBasique, phiBasiqueDerivated);
+}
+
+/*-----------------------------------------------------------------*/
+/* INITIALIZES OBJECTS */
+/*-----------------------------------------------------------------*/
+struct Multivariate_functionDescription initialize_fdesc(string fString, std::vector<string> df, double (*f)(std::vector<double> x), std::vector<std::vector<double>> bornersVar){
+  struct Multivariate_functionDescription fdesc;
+  fdesc.functionString = fString;
+  fdesc.derivedFunctionStrings = df;
+  fdesc.f = f;
+  fdesc.bornersVar = bornersVar;
+  fdesc.nbX = bornersVar.size();
+  return fdesc;
+}
+
+struct Multivariate_RemezIParameters initialize_remezdesc(struct Multivariate_functionDescription fdesc, int degree, int sizeD0, int nbTurns){
+  struct Multivariate_RemezIParameters remezdesc;
+  remezdesc.approximationDegree = degree;
+  remezdesc.sizeD0 = sizeD0 ; //Warning, if exchange, sizeD0 value will be replaced by degree+2
+  remezdesc.maxNbTurns = nbTurns;
+  remezdesc.approximationResult = 1.e-10;
+  remezdesc.approximationPoints = 1.e-15;
+  remezdesc.fdesc = fdesc;
+  return remezdesc;
+}
+
+struct Multivariate_Polynomiale initialize_poly(std::vector<double>(*phi)(std::vector<double> x, int degree), std::vector<string> (*derivatedPhi)(std::vector<double> a, int nbX, int degree)){
+  struct Multivariate_Polynomiale poly;
+  poly.a = {};
+  poly.phi = (*phi);
+  poly.derivatedPhi = (*derivatedPhi);
+  return poly;
+}
+
+/*-----------------------------------------------------------------*/
+/* MAIN */
+/*-----------------------------------------------------------------*/
+
+int main(int argc, char** argv) { 
+  int nbTurns = 100;
+  int sizeD0 = 3;
+  int degree = 1;
+  string path = createPath();
+  struct Multivariate_RemezIParameters remezdesc;
+  struct Multivariate_functionDescription fdesc;
+  //struct Multivariate_Polynomiale poly;
+  
+  fdesc = initializeF0();
+  remezdesc = initialize_remezdesc(fdesc, degree, sizeD0, nbTurns);
+  remezdesc.poly = initializePhiBasic();
+  remezdesc.poly.degree = degree;
+  write_introduction(path, remezdesc);
+  std::vector<std::vector<double>> D = step0(fdesc.nbX, remezdesc, fdesc);
+  writeD(remezdesc, D, path);
+  remezdesc.poly.a = step1(D, fdesc, remezdesc, remezdesc.poly);
+  //double newPoints = step2(remezdesc.poly.a, remezdesc, path);
+}
+
+/*-----------------------------------------------------------------*/
+/* REMEZ II */
+/*-----------------------------------------------------------------*/
+
+std::vector<std::vector<double>> step0(int nbX, struct Multivariate_RemezIParameters remezdesc, struct Multivariate_functionDescription fdesc){
+  std::vector<double> steps = {};
+  for (int i = 0; i<nbX; i++){
+    steps.push_back((fdesc.bornersVar[i][1] - fdesc.bornersVar[i][0])/(remezdesc.sizeD0-1));
+  }
+  std::vector<std::vector<double>> D0 = {};
+  std::vector<double> d = {};
+  for(int i = 0; i < remezdesc.sizeD0; i ++){
+    for(int j = 0; j < nbX; j++){
+      d.push_back(fdesc.bornersVar[j][0] + steps[j]*i);
+    }
+    D0.push_back(d);
+    d = {};
+    d.push_back(fdesc.bornersVar[0][0] + steps[0]*i);
+    for(int j = 1; j < nbX; j++){
+      d.push_back(fdesc.bornersVar[j][0]);
+    }
+    D0.push_back(d);
+    d = {};
+  }
+  return D0;
+}
+
+std::vector<double> step1(std::vector<std::vector<double>> D, struct Multivariate_functionDescription fdesc, struct Multivariate_RemezIParameters remezdesc, struct Multivariate_Polynomiale poly){
+  string path = createPath();
+  std::vector<std::vector<double>> p = {};
+  for(int j = 0; j< D.size(); j++){
+    p.push_back(poly.phi(D[j], poly.degree));
+  }
+   
+  SoPlex mysoplex;
+  /* parameters */
+  mysoplex.setIntParam(SoPlex::READMODE, SoPlex::READMODE_REAL);
+  mysoplex.setIntParam(SoPlex::SOLVEMODE, SoPlex::SOLVEMODE_REAL);
+  mysoplex.setIntParam(SoPlex::CHECKMODE, SoPlex::CHECKMODE_REAL);
+  mysoplex.setIntParam(SoPlex::SYNCMODE, SoPlex::SYNCMODE_AUTO);
+  mysoplex.setRealParam(SoPlex::FEASTOL, 0.0);
+  mysoplex.setRealParam(SoPlex::OPTTOL, 0.0);
+  /* Objective sense */
+  mysoplex.setIntParam(SoPlex::OBJSENSE, SoPlex::OBJSENSE_MINIMIZE);
+  /* Variables */
+  DSVectorReal dummycol(0);  
+  for(int i = 0; i<p[0].size(); i++){
+     mysoplex.addColReal(LPColReal(0, dummycol, infinity, -infinity));
+   }
+   mysoplex.addColReal(LPColReal(1, dummycol, infinity, -infinity));
+   /* Constraints */
+   Real r;
+   for(int i = 0 ; i<D.size(); i++){ 
+     DSVectorReal row1(0);
+     for(int j = 0 ; j<p[i].size(); j++){
+       r = p[i][j];
+       row1.add(j, r);
+     }
+     r = 1;
+     row1.add(p[i].size(), r);
+     r = fdesc.f(D[i]);
+     mysoplex.addRowReal(LPRowReal(r, row1, infinity));
+   }
+   for(int i = 0 ; i<D.size(); i++){
+     DSVectorReal row1(0);
+     for(int j = 0 ;  j<p[i].size(); j++){
+       r = -p[i][j];
+       row1.add(j, r);
+     }
+     r = 1;
+     row1.add(p[i].size(), r);
+     r = -fdesc.f(D[i]);
+     mysoplex.addRowReal(LPRowReal(r, row1, infinity));
+   }
+   string fullPathToModel = path + "models/step1Soplex.lp";
+   mysoplex.writeFileReal(fullPathToModel.c_str(), NULL, NULL, NULL);
+   SPxSolver::Status stat;
+   DVectorRational prim(p[0].size()+1);
+   DVectorRational dual(D.size()*2);
+   stat = mysoplex.optimize();
+   std::vector<double> primDouble;
+   /*Solution */
+   if(stat == SPxSolver::OPTIMAL)
+   {
+      mysoplex.getPrimalRational(prim);
+      mysoplex.getDualRational(dual);
+      std::cout << "LP solved to optimality.\n";
+      std::cout << "Objective value is " << mysoplex.objValueRational() << ".\n";
+      cout << "Primal solution is [ "; 
+      for(int j = 0 ;  j<p[0].size(); j++){
+        cout << prim[j] << ", ";
+        primDouble.push_back(prim[j]);
+      }
+      cout << " ]" << endl;
+      std::cout << "Error solution is [" << prim[primDouble.size()] << "].\n";
+      primDouble.push_back(prim[primDouble.size()]);
+      return primDouble;
+   }
+   else
+   {
+      std::cout << "Error: SoPlex returned with status " << stat << ".\n";
+      return primDouble;
+   }   
+}
+
+/*-----------------------------------------------------------------*/
+/* OUTPUT */
+/*-----------------------------------------------------------------*/
+
+string createPath(){
+  string path = "../resultsOfSteps/multi/";
+  return path;
+}
+
+void write_introduction(string path, struct Multivariate_RemezIParameters remezdesc){
+  std::ofstream summary;
+  summary.open(path + "summary/" + remezdesc.fdesc.functionString + ".txt", std::ios_base::app);
+  summary << "Welcome to the summary of ";
+  summary << "Remez 1 multi ";
+  summary << "for multivariate polynomial approximation. \n";
+  summary << "With the following parameters : \n";
+  summary << "degree of approximation = " << remezdesc.approximationDegree << "\n";
+  summary << "size of first discretization =" << remezdesc.sizeD0 << "\n";
+  summary << "maximum number of turns = " << remezdesc.maxNbTurns << "\n";
+  summary << "approximation of error = " << remezdesc.approximationResult << "\n";
+  summary << "approximation of points = " << remezdesc.approximationPoints << "\n";
+  summary << "x in = [";
+  for(int i = 0; i<remezdesc.fdesc.bornersVar.size(); i++){
+      summary << "[" << remezdesc.fdesc.bornersVar[i][0] << "," << remezdesc.fdesc.bornersVar[i][1] << "]";
+  }
+  summary << "]\n";
+  summary << "For the function " << remezdesc.fdesc.functionString << ".\n";
+}
+
+void writeD(struct Multivariate_RemezIParameters remezdesc, std::vector<std::vector<double>> D, string path){
+  std::ofstream summary;
+  summary.open(path + "summary/" + remezdesc.fdesc.functionString + ".txt", std::ios_base::app);
+  summary << "Generated D0 is : ";
+  for(int i=0; i<D.size(); i++){
+    summary << "[";
+    for(int j=0; j<D[i].size(); j++){
+      summary << D[i][j] << ", ";
+    }
+    summary << "] ";
+  }
+}
+
+double step2(std::vector<double> A, struct Multivariate_RemezIParameters remezdesc, string path){
+  createModelStep2(A, remezdesc, path);
+  string fullPathToModel = path + "models/step2_model.txt";
+  ofstream step2R(path + "stepResult/step2_result.txt");
+
+  System sys(fullPathToModel.c_str());
+  DefaultOptimizer optimizer(sys,1e-09, 1e-10);
+  optimizer.optimize(sys.box);
+  optimizer.report();
+  
+  step2R << "minimizer: " << optimizer.get_loup_point() << endl;
+  step2R << "uplo " << optimizer.get_uplo() << "\n" << endl;
+  step2R << "loup " << optimizer.get_loup() << endl;
+  step2R << optimizer.get_data();
+  step2R.close();
+  return 0.0;
+}
+
+void createModelStep2(std::vector<double> A, struct Multivariate_RemezIParameters remezdesc, string path){
+  ofstream step2(path + "models/step2_model.txt");
+  step2 << "Variables\n";
+  
+  for(int i=0; i<remezdesc.fdesc.bornersVar.size(); i++){
+  step2 << "  x" << i << "in [" << remezdesc.fdesc.bornersVar[i][0] <<" , " << remezdesc.fdesc.bornersVar[i][1] <<"];\n";
+  }
+  std::vector<string> p = remezdesc.poly.derivatedPhi(A, remezdesc.fdesc.nbX, remezdesc.approximationDegree);
+  
+  step2 << "\nMinimize\n";
+  step2 << "  -abs(0" ;
+  for(int j = 0; j < p.size(); j++){
+    step2 << "+(" << p[j] << ")";
+  }
+  step2 << "(-(" << remezdesc.fdesc.functionString << "))); \n";
+  step2 << "\nConstraints\n";
+  step2 << "end";
+  step2.close();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,155 @@
+Welcome to the summary of Remez 1 multi for multivariate polynomial approximation. 
+With the following parameters : 
+degree of approximation = 1
+size of first discretization =3
+maximum number of turns = 100
+approximation of error = 1.00001e-10
+approximation of points = 1.00001e-15
+x in = [[-1,1][-1,1]]
+For the function x1^2 + x2^2.
+Generated D0 is : [-1, -1, ] [0, 0, ] [1, 1, ]
+Welcome to the summary of Remez 1 multi for multivariate polynomial approximation. 
+With the following parameters : 
+degree of approximation = 1
+size of first discretization =3
+maximum number of turns = 100
+approximation of error = 1.00001e-10
+approximation of points = 1.00001e-15
+x in = [[-1,1][-1,1]]
+For the function x1^2 + x2^2.
+Generated D0 is : [-1, -1, ] [0, 0, ] [1, 1, ] Welcome to the summary of Remez 1 multi for multivariate polynomial approximation. 
+With the following parameters : 
+degree of approximation = 1
+size of first discretization =3
+maximum number of turns = 100
+approximation of error = 1.00001e-10
+approximation of points = 1.00001e-15
+x in = [[-1,1][-1,1]]
+For the function x1^2 + x2^2.
+Generated D0 is : [-1, -1, ] [0, 0, ] [1, 1, ] Welcome to the summary of Remez 1 multi for multivariate polynomial approximation. 
+With the following parameters : 
+degree of approximation = 1
+size of first discretization =3
+maximum number of turns = 100
+approximation of error = 1.00001e-10
+approximation of points = 1.00001e-15
+x in = [[-1,1][-1,1]]
+For the function x1^2 + x2^2.
+Generated D0 is : [-1, -1, ] [0, 0, ] [1, 1, ] Welcome to the summary of Remez 1 multi for multivariate polynomial approximation. 
+With the following parameters : 
+degree of approximation = 1
+size of first discretization =3
+maximum number of turns = 100
+approximation of error = 1.00001e-10
+approximation of points = 1.00001e-15
+x in = [[-1,1][-1,1]]
+For the function x1^2 + x2^2.
+Generated D0 is : [-1, -1, ] [0, 0, ] [1, 1, ] Welcome to the summary of Remez 1 multi for multivariate polynomial approximation. 
+With the following parameters : 
+degree of approximation = 1
+size of first discretization =3
+maximum number of turns = 100
+approximation of error = 1.00001e-10
+approximation of points = 1.00001e-15
+x in = [[-1,1][-1,1]]
+For the function x1^2 + x2^2.
+Generated D0 is : [-1, -1, ] [0, 0, ] [1, 1, ] Welcome to the summary of Remez 1 multi for multivariate polynomial approximation. 
+With the following parameters : 
+degree of approximation = 1
+size of first discretization =3
+maximum number of turns = 100
+approximation of error = 1.00001e-10
+approximation of points = 1.00001e-15
+x in = [[-1,1][-1,1]]
+For the function x1^2 + x2^2.
+Generated D0 is : [-1, -1, ] [0, 0, ] [1, 1, ] Welcome to the summary of Remez 1 multi for multivariate polynomial approximation. 
+With the following parameters : 
+degree of approximation = 1
+size of first discretization =3
+maximum number of turns = 100
+approximation of error = 1.00001e-10
+approximation of points = 1.00001e-15
+x in = [[-1,1][-1,1]]
+For the function x1^2 + x2^2.
+Generated D0 is : [-1, -1, ] [0, 0, ] [1, 1, ] Welcome to the summary of Remez 1 multi for multivariate polynomial approximation. 
+With the following parameters : 
+degree of approximation = 1
+size of first discretization =3
+maximum number of turns = 100
+approximation of error = 1.00001e-10
+approximation of points = 1.00001e-15
+x in = [[-1,1][-1,1]]
+For the function x1^2 + x2^2.
+Generated D0 is : [-1, -1, ] [0, 0, ] [1, 1, ] Welcome to the summary of Remez 1 multi for multivariate polynomial approximation. 
+With the following parameters : 
+degree of approximation = 1
+size of first discretization =3
+maximum number of turns = 100
+approximation of error = 1.00001e-10
+approximation of points = 1.00001e-15
+x in = [[-1,1][-1,1]]
+For the function x1^2 + x2^2.
+Generated D0 is : [-1, -1, ] [0, 0, ] [1, 1, ] Welcome to the summary of Remez 1 multi for multivariate polynomial approximation. 
+With the following parameters : 
+degree of approximation = 1
+size of first discretization =3
+maximum number of turns = 100
+approximation of error = 1.00001e-10
+approximation of points = 1.00001e-15
+x in = [[-1,1][-1,1]]
+For the function x1^2 + x2^2.
+Generated D0 is : [-1, -1, ] [0, 0, ] [1, 1, ] Welcome to the summary of Remez 1 multi for multivariate polynomial approximation. 
+With the following parameters : 
+degree of approximation = 1
+size of first discretization =3
+maximum number of turns = 100
+approximation of error = 1.00001e-10
+approximation of points = 1.00001e-15
+x in = [[-1,1][-1,1]]
+For the function x1^2 + x2^2.
+Generated D0 is : [-1, -1, ] [0, 0, ] [1, 1, ] Welcome to the summary of Remez 1 multi for multivariate polynomial approximation. 
+With the following parameters : 
+degree of approximation = 1
+size of first discretization =3
+maximum number of turns = 100
+approximation of error = 1.00001e-10
+approximation of points = 1.00001e-15
+x in = [[-1,1][-1,1]]
+For the function x1^2 + x2^2.
+Generated D0 is : [-1, -1, ] [0, 0, ] [1, 1, ] Welcome to the summary of Remez 1 multi for multivariate polynomial approximation. 
+With the following parameters : 
+degree of approximation = 1
+size of first discretization =3
+maximum number of turns = 100
+approximation of error = 1.00001e-10
+approximation of points = 1.00001e-15
+x in = [[0,1][0,1]]
+For the function x1^2 + x2^2.
+Generated D0 is : [0, 0, ] [0.5, 0.5, ] [1, 1, ] Welcome to the summary of Remez 1 multi for multivariate polynomial approximation. 
+With the following parameters : 
+degree of approximation = 1
+size of first discretization =10
+maximum number of turns = 100
+approximation of error = 1.00001e-10
+approximation of points = 1.00001e-15
+x in = [[0,1][0,1]]
+For the function x1^2 + x2^2.
+Generated D0 is : [0, 0, ] [0.111112, 0.111112, ] [0.222223, 0.222223, ] [0.333334, 0.333334, ] [0.444445, 0.444445, ] [0.555556, 0.555556, ] [0.666667, 0.666667, ] [0.777778, 0.777778, ] [0.888889, 0.888889, ] [1.00001, 1.00001, ] Welcome to the summary of Remez 1 multi for multivariate polynomial approximation. 
+With the following parameters : 
+degree of approximation = 1
+size of first discretization =100
+maximum number of turns = 100
+approximation of error = 1.00001e-10
+approximation of points = 1.00001e-15
+x in = [[0,1][0,1]]
+For the function x1^2 + x2^2.
+Generated D0 is : [0, 0, ] [0.0101011, 0.0101011, ] [0.0202021, 0.0202021, ] [0.0303031, 0.0303031, ] [0.0404041, 0.0404041, ] [0.0505051, 0.0505051, ] [0.0606061, 0.0606061, ] [0.0707071, 0.0707071, ] [0.0808081, 0.0808081, ] [0.0909091, 0.0909091, ] [0.101011, 0.101011, ] [0.111112, 0.111112, ] [0.121213, 0.121213, ] [0.131314, 0.131314, ] [0.141415, 0.141415, ] [0.151516, 0.151516, ] [0.161617, 0.161617, ] [0.171718, 0.171718, ] [0.181819, 0.181819, ] [0.19192, 0.19192, ] [0.202021, 0.202021, ] [0.212122, 0.212122, ] [0.222223, 0.222223, ] [0.232324, 0.232324, ] [0.242425, 0.242425, ] [0.252526, 0.252526, ] [0.262627, 0.262627, ] [0.272728, 0.272728, ] [0.282829, 0.282829, ] [0.29293, 0.29293, ] [0.303031, 0.303031, ] [0.313132, 0.313132, ] [0.323233, 0.323233, ] [0.333334, 0.333334, ] [0.343435, 0.343435, ] [0.353536, 0.353536, ] [0.363637, 0.363637, ] [0.373738, 0.373738, ] [0.383839, 0.383839, ] [0.39394, 0.39394, ] [0.404041, 0.404041, ] [0.414142, 0.414142, ] [0.424243, 0.424243, ] [0.434344, 0.434344, ] [0.444445, 0.444445, ] [0.454546, 0.454546, ] [0.464647, 0.464647, ] [0.474748, 0.474748, ] [0.484849, 0.484849, ] [0.49495, 0.49495, ] [0.505051, 0.505051, ] [0.515152, 0.515152, ] [0.525253, 0.525253, ] [0.535354, 0.535354, ] [0.545455, 0.545455, ] [0.555556, 0.555556, ] [0.565657, 0.565657, ] [0.575758, 0.575758, ] [0.585859, 0.585859, ] [0.59596, 0.59596, ] [0.606061, 0.606061, ] [0.616162, 0.616162, ] [0.626263, 0.626263, ] [0.636364, 0.636364, ] [0.646465, 0.646465, ] [0.656566, 0.656566, ] [0.666667, 0.666667, ] [0.676768, 0.676768, ] [0.686869, 0.686869, ] [0.69697, 0.69697, ] [0.707071, 0.707071, ] [0.717172, 0.717172, ] [0.727273, 0.727273, ] [0.737374, 0.737374, ] [0.747475, 0.747475, ] [0.757576, 0.757576, ] [0.767677, 0.767677, ] [0.777778, 0.777778, ] [0.787879, 0.787879, ] [0.79798, 0.79798, ] [0.808081, 0.808081, ] [0.818182, 0.818182, ] [0.828283, 0.828283, ] [0.838384, 0.838384, ] [0.848485, 0.848485, ] [0.858586, 0.858586, ] [0.868687, 0.868687, ] [0.878788, 0.878788, ] [0.888889, 0.888889, ] [0.89899, 0.89899, ] [0.909091, 0.909091, ] [0.919192, 0.919192, ] [0.929293, 0.929293, ] [0.939394, 0.939394, ] [0.949495, 0.949495, ] [0.959596, 0.959596, ] [0.969697, 0.969697, ] [0.979798, 0.979798, ] [0.989899, 0.989899, ] [1.00001, 1.00001, ] Welcome to the summary of Remez 1 multi for multivariate polynomial approximation. 
+With the following parameters : 
+degree of approximation = 1
+size of first discretization =3
+maximum number of turns = 100
+approximation of error = 1.00001e-10
+approximation of points = 1.00001e-15
+x in = [[0,1][0,1]]
+For the function x1^2 + x2^2.
+Generated D0 is : [0, 0, ] [0, 0, ] [0.5, 0.5, ] [0.5, 0, ] [1, 1, ] [1, 0, ] 

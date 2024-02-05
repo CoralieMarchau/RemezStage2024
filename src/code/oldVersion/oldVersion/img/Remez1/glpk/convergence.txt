@@ -1,0 +1,5 @@
+distance au tour 0 : 0.000919311
+distance au tour 1 : 0.00102345
+distance au tour 2 : 0.000335637
+distance au tour 3 : 0.000423583
+distance au tour 4 : 0.000137711
