@@ -72,6 +72,7 @@ void write_introduction(string path, struct Multivariate_RemezIParameters remezd
 void writeD(struct Multivariate_RemezIParameters remezdesc, std::vector<std::vector<double>> D, string path);
 double step2(std::vector<double> A, struct Multivariate_RemezIParameters remezdesc, string path);
 void createModelStep2(std::vector<double> A, struct Multivariate_RemezIParameters remezdesc, string path);
+void createErrorGraph(struct Multivariate_RemezIParameters remezdesc, string path);
 /*-----------------------------------------------------------------*/
 /* FUNCTIONS TO APPROXIMATE */
 /*-----------------------------------------------------------------*/
@@ -275,6 +276,7 @@ int main(int argc, char** argv) {
   std::vector<std::vector<double>> D = step0(fdesc.nbX, remezdesc, fdesc);
   writeD(remezdesc, D, path);
   remezdesc.poly.a = step1(D, fdesc, remezdesc, remezdesc.poly);
+  createErrorGraph(remezdesc, path);
   //double newPoints = step2(remezdesc.poly.a, remezdesc, path);
 }
 
@@ -463,8 +465,47 @@ void createModelStep2(std::vector<double> A, struct Multivariate_RemezIParameter
   step2.close();
 }
 
+/*-----------------------------------------------------------------*/
+/* GRAPHS */
+/*-----------------------------------------------------------------*/
+
+void createErrorGraph(struct Multivariate_RemezIParameters remezdesc, string path){
+  
 
 
+
+   //TO DEBUG
+  Vec x0 = linspace(remezdesc.fdesc.bornersVar[0][0], remezdesc.fdesc.bornersVar[0][1], 100);
+  Vec x1 = linspace(remezdesc.fdesc.bornersVar[1][0], remezdesc.fdesc.bornersVar[1][1], 100);
+  std::vector<double> e;
+  std::vector<double> x = {};
+  int i = 0;
+  for (int i = 0; i<x0.size(); i++) {
+    for (int j=0; j<x1.size(); j++) {
+      x.push_back(x0[i]);
+      x.push_back(x1[j]);
+      e.push_back(error(remezdesc.poly, x, remezdesc.fdesc.f));
+      cout << error(remezdesc.poly, x, remezdesc.fdesc.f) << " , ";
+      x = {};
+    }
+  }
+  Plot3D plot;
+  plot.xlabel("x0");
+  plot.ylabel("x1");
+  plot.zlabel("error");
+  
+  plot.border().clear();
+  plot.border().bottomLeftFront();
+  plot.border().bottomRightFront();
+  plot.border().leftVertical();
+  
+  plot.palette("dark2");
+  plot.drawCurve(x0, x1, e).label("error");
+  Figure fig = {{plot}};
+  Canvas canvas = {{fig}};
+  canvas.show();
+  canvas.save(path + "errorEndStep1.pdf");
+}
 
 
 
