@@ -73,6 +73,7 @@ double step2(std::vector<double> A, struct Multivariate_RemezIIParameters remezd
 void createErrorGraph(struct Multivariate_RemezIIParameters remezdesc, string path);
 void writeA(std::vector<double> a, string path, string functionString);
 std::vector<std::vector<double>> step0_random(int nbPoints, struct Multivariate_RemezIIParameters remezdesc, struct Multivariate_functionDescription fdesc);
+void write_data_for_graphs(std::vector<double> A, std::vector<std::vector<double>> bornersVar);
 /*-----------------------------------------------------------------*/
 /* FUNCTIONS TO APPROXIMATE */
 /*-----------------------------------------------------------------*/
@@ -261,6 +262,7 @@ struct Multivariate_Polynomiale initialize_poly(std::vector<double>(*phi)(std::v
 int main(int argc, char** argv) { 
   int nbTurns = 100;
   int degree = 1;
+  double errorStep1 = 0;
   string path = createPath();
   struct Multivariate_RemezIIParameters remezdesc;
   struct Multivariate_functionDescription fdesc;
@@ -276,8 +278,12 @@ int main(int argc, char** argv) {
   std::vector<std::vector<double>> D = step0_random(nbPoints, remezdesc, fdesc);
   writeD(remezdesc, D, path);
   remezdesc.poly.a = step1(D, fdesc, remezdesc, remezdesc.poly);
+  //Taking the error out of the polynomial
+  errorStep1 = remezdesc.poly.a[remezdesc.poly.a.size()-1];
+  remezdesc.poly.a.pop_back();
   //writeA(remezdesc.poly.a, path, fdesc.functionString);
-  createErrorGraph(remezdesc, path);
+  //createErrorGraph(remezdesc, path);
+  write_data_for_graphs(remezdesc.poly.a, fdesc.bornersVar);
   //double newPoints = step2(remezdesc.poly.a, remezdesc, path);
 }
 
@@ -496,6 +502,23 @@ void writeD(struct Multivariate_RemezIIParameters remezdesc, std::vector<std::ve
       summary << D[i][j] << ", ";
     }
     summary << "] ";
+  }
+}
+
+void write_data_for_graphs(std::vector<double> A, std::vector<std::vector<double>> bornersVar){
+  std::ofstream data;
+  data.open("data/data.txt",std::ofstream::trunc);
+  for(int i = 0; i<A.size(); i++){
+    data << A[i] << " ";
+  }
+  //for ease, we put 0 until having the same number of "case" for the python tab
+  for(int i = A.size()-1 ; i<=bornersVar.size(); i++){
+    data << "0 ";
+  }
+  
+  data << "\n";
+  for(int i = 0; i<bornersVar.size(); i++){
+    data << bornersVar[i][0] << " " << bornersVar[i][1] << " ";
   }
 }
 
