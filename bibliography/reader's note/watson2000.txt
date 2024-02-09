@@ -1,0 +1,14 @@
+Article title : Approximation in normed linear spaces
+Year of publication : 2000
+Author(s) : G.A Watson
+
+-------------------------------
+Summary : An historical amount of approximation focused on linear and non-linear approximation of real. Mainly talks about univariate though comments on multivariate case are presented. Most of the article is descriptive as it is its attention. 
+(Little warning : problem on the highlighting)
+-------------------------------
+
+Memory items to remember :
+-Loads of source material is referenced in the article. It may be interesting to investigate some of them (example : Borel 1905 (source 28) as it establish the alternation result and uniqueness of solution for the univariate case. Or Osborne and Watson 1969 (151) with the singular problems)/
+-no chebyshev set above dimension one (pointed out by Mairhuber 1956 (119))
+-phi(x) respect Haar if chebyshev set
+-the two previous points partial explanation of the number of singularity in multivariate pb

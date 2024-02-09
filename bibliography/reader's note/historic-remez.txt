@@ -7,4 +7,4 @@ Summary : Historic document ( url : https://gallica.bnf.fr/ark:/12148/bpt6k3151h
 
 -------------------------------
 
-Memory items to remember : I think it may correspond to version + as the taken points were the n+2 maxima and minima of the error. (see page 339, towards the end)
+Memory items to remember : -I think it may correspond to version + as the taken points were the n+2 maxima and minima of the error. (see page 339, towards the end)

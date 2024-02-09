@@ -1,0 +1,17 @@
+Article title : A MULTIPLE EXCHANGE ALGORITHM FOR MULTIVARIATE CHEBYSHEV APPROXIMATION
+Year of publication : 1975
+Author(s) : G. A. WATSON
+
+-------------------------------
+Summary : 
+
+
+
+-------------------------------
+
+Memory items to remember :
+-quadratic convergence showed by Veidinger (see ref 12)
+-no chebyshev set in dimension > 1 (see ref 8 Mairhuber)
+-Singular = less than n+1 extrema in X for optimal approx
+-unicité de soluton plus prouvé pour multivarié
+-no proof convergence quadratic for nonsingular multivariate problem

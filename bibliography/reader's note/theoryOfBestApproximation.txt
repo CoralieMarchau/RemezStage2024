@@ -1,0 +1,11 @@
+Article title : The Theory of Best Approximation of Functions
+Year of publication : 2000
+Author(s) : V. L. Goncharov
+
+-------------------------------
+Summary : An historical mathematical account on approximation theory pretty centered around Chebyshev. It is full of interesting notions and relatively easy to read and understand. It also allowed to better understand some notations not always explained in other articles and has a lot of context on the evolution of the theories.
+
+-------------------------------
+
+Memory items to remember :
+TO DO LATER (in meantime see highlighted part)

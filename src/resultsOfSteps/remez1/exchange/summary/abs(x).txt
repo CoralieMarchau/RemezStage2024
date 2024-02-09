@@ -1,0 +1,16 @@
+Welcome to the summary of Exchange Remez 1 for univariate polynomial approximation. 
+With the following parameters : 
+degree of approximation = 2
+size of first discretization =4
+maximum number of turns = 100
+approximation of error = 1.00001e-10
+approximation of points = 1.00001e-15
+x in [-1,1]
+For the function abs(x).
+Step 1: 
+D=[-1,-0.333333,0.333334,1]
+Polynom = [0.995539,0.02736276231647,0.5447635294976] 
+Error step1 =0.9862870369797
+Error step2 =0.004461223629438
+Step 2: 
+D=[-1,-0.333333,0,1]

@@ -1,12 +1,11 @@
-Article title : 
-Year of publication : 
-Author(s) :
+Article title : Discretization Methods for the Solution of Semi-Infinite Programming Problems
+Year of publication : 1991
+Author(s) :  R. Reemtsen 
 
 -------------------------------
-Summary : 
-
-
+Summary : Main focus of the work. 
 
 -------------------------------
 
 Memory items to remember :
+ 
