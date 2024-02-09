@@ -40,39 +40,39 @@ struct Multivariate_functionDescription {
   double (*f)(std::vector<double> x); // Must correspond to the string version
 } MultivariatefunctionDescription;
 
-struct Multivariate_RemezIParameters {
+struct Multivariate_RemezIIParameters {
   struct Multivariate_Polynomiale poly;
   struct Multivariate_functionDescription fdesc; //description of the function to approximate
   int approximationDegree; //a_i with i in [0 ; approximationDegree], as many i as nbVar
-  int sizeD0; //Advised to be >= to approximationDegree+2 for quickest approximation
   int maxNbTurns; //Failsafe
   double approximationResult;
   double approximationPoints; 
-} Multivariate_RemezIParameters;
+} Multivariate_RemezIIParameters;
 
-//Results of RemezI multivariate for comparisons and graphs
-struct Multivariate_RemezIResult {
+//Results of RemezII multivariate for comparisons and graphs
+struct Multivariate_RemezIIResult {
   int nbTurns;
   int currentTurn;
   std::vector<double> errorStep1;
   std::vector<double> errorStep2;
   string path;
-} Multivariate_RemezIResult;
+} Multivariate_RemezIIResult;
 
 /*-----------------------------------------------------------------*/
 /* FUNCTIONS DECLARATION */
 /*-----------------------------------------------------------------*/
 struct Multivariate_functionDescription initialize_fdesc(string fString, std::vector<string> df, double (*f)(std::vector<double> x), std::vector<std::vector<double>> bornersVar);
-struct Multivariate_RemezIParameters initialize_remezdesc(struct Multivariate_functionDescription fdesc, int degree, int sizeD0, int nbTurns);
+struct Multivariate_RemezIIParameters initialize_remezdesc(struct Multivariate_functionDescription fdesc, int degree, int nbTurns);
 struct Multivariate_Polynomiale initialize_poly(std::vector<double>(*phi)(std::vector<double> x, int degree), std::vector<string> (*derivatedPhi)(std::vector<double> a, int nbX, int degree));
-std::vector<std::vector<double>> step0(int nbX, struct Multivariate_RemezIParameters remezdesc, struct Multivariate_functionDescription fdesc);
+std::vector<std::vector<double>> step0(int nbX, struct Multivariate_RemezIIParameters remezdesc, struct Multivariate_functionDescription fdesc);
 string createPath();
-std::vector<double> step1(std::vector<std::vector<double>> D, struct Multivariate_functionDescription fdesc, struct Multivariate_RemezIParameters remezdesc, struct Multivariate_Polynomiale poly);
-void write_introduction(string path, struct Multivariate_RemezIParameters remezdesc);
-void writeD(struct Multivariate_RemezIParameters remezdesc, std::vector<std::vector<double>> D, string path);
-double step2(std::vector<double> A, struct Multivariate_RemezIParameters remezdesc, string path);
-void createModelStep2(std::vector<double> A, struct Multivariate_RemezIParameters remezdesc, string path);
-void createErrorGraph(struct Multivariate_RemezIParameters remezdesc, string path);
+std::vector<double> step1(std::vector<std::vector<double>> D, struct Multivariate_functionDescription fdesc, struct Multivariate_RemezIIParameters remezdesc, struct Multivariate_Polynomiale poly);
+void write_introduction(string path, struct Multivariate_RemezIIParameters remezdesc);
+void writeD(struct Multivariate_RemezIIParameters remezdesc, std::vector<std::vector<double>> D, string path);
+double step2(std::vector<double> A, struct Multivariate_RemezIIParameters remezdesc, string path);
+void createErrorGraph(struct Multivariate_RemezIIParameters remezdesc, string path);
+void writeA(std::vector<double> a, string path, string functionString);
+std::vector<std::vector<double>> step0_random(int nbPoints, struct Multivariate_RemezIIParameters remezdesc, struct Multivariate_functionDescription fdesc);
 /*-----------------------------------------------------------------*/
 /* FUNCTIONS TO APPROXIMATE */
 /*-----------------------------------------------------------------*/
@@ -236,10 +236,9 @@ struct Multivariate_functionDescription initialize_fdesc(string fString, std::ve
   return fdesc;
 }
 
-struct Multivariate_RemezIParameters initialize_remezdesc(struct Multivariate_functionDescription fdesc, int degree, int sizeD0, int nbTurns){
-  struct Multivariate_RemezIParameters remezdesc;
+struct Multivariate_RemezIIParameters initialize_remezdesc(struct Multivariate_functionDescription fdesc, int degree, int nbTurns){
+  struct Multivariate_RemezIIParameters remezdesc;
   remezdesc.approximationDegree = degree;
-  remezdesc.sizeD0 = sizeD0 ; //Warning, if exchange, sizeD0 value will be replaced by degree+2
   remezdesc.maxNbTurns = nbTurns;
   remezdesc.approximationResult = 1.e-10;
   remezdesc.approximationPoints = 1.e-15;
@@ -261,21 +260,23 @@ struct Multivariate_Polynomiale initialize_poly(std::vector<double>(*phi)(std::v
 
 int main(int argc, char** argv) { 
   int nbTurns = 100;
-  int sizeD0 = 3;
   int degree = 1;
   string path = createPath();
-  struct Multivariate_RemezIParameters remezdesc;
+  struct Multivariate_RemezIIParameters remezdesc;
   struct Multivariate_functionDescription fdesc;
   //struct Multivariate_Polynomiale poly;
   
   fdesc = initializeF0();
-  remezdesc = initialize_remezdesc(fdesc, degree, sizeD0, nbTurns);
+  remezdesc = initialize_remezdesc(fdesc, degree, nbTurns);
   remezdesc.poly = initializePhiBasic();
   remezdesc.poly.degree = degree;
   write_introduction(path, remezdesc);
-  std::vector<std::vector<double>> D = step0(fdesc.nbX, remezdesc, fdesc);
+  //std::vector<std::vector<double>> D = step0(fdesc.nbX, remezdesc, fdesc);
+  int nbPoints = 5;
+  std::vector<std::vector<double>> D = step0_random(nbPoints, remezdesc, fdesc);
   writeD(remezdesc, D, path);
   remezdesc.poly.a = step1(D, fdesc, remezdesc, remezdesc.poly);
+  //writeA(remezdesc.poly.a, path, fdesc.functionString);
   createErrorGraph(remezdesc, path);
   //double newPoints = step2(remezdesc.poly.a, remezdesc, path);
 }
@@ -284,30 +285,77 @@ int main(int argc, char** argv) {
 /* REMEZ II */
 /*-----------------------------------------------------------------*/
 
-std::vector<std::vector<double>> step0(int nbX, struct Multivariate_RemezIParameters remezdesc, struct Multivariate_functionDescription fdesc){
-  std::vector<double> steps = {};
-  for (int i = 0; i<nbX; i++){
-    steps.push_back((fdesc.bornersVar[i][1] - fdesc.bornersVar[i][0])/(remezdesc.sizeD0-1));
-  }
+std::vector<std::vector<double>> step0(int nbX, struct Multivariate_RemezIIParameters remezdesc, struct Multivariate_functionDescription fdesc){
   std::vector<std::vector<double>> D0 = {};
   std::vector<double> d = {};
-  for(int i = 0; i < remezdesc.sizeD0; i ++){
-    for(int j = 0; j < nbX; j++){
-      d.push_back(fdesc.bornersVar[j][0] + steps[j]*i);
+  for(int i = 0; i < nbX; i ++){ //middle
+    d.push_back((fdesc.bornersVar[i][1] - fdesc.bornersVar[i][0])/2);
+  }
+  D0.push_back(d);
+  d = {};
+  for(int i = 0; i < nbX; i ++){ //all min
+    d.push_back(fdesc.bornersVar[i][0]);
+  }
+  D0.push_back(d);
+  d = {};
+  
+  for(int i = 0; i < nbX; i ++){ //all max
+    d.push_back(fdesc.bornersVar[i][1]);
+  }
+  D0.push_back(d);
+  d = {};
+  
+  for(int j = 0; j < nbX; j ++){ 
+    //j only max
+    for(int i = 0; i < j; i ++){ 
+      d.push_back(fdesc.bornersVar[i][0]);
+    }
+    d.push_back(fdesc.bornersVar[j][1]);
+    for(int i = j+1; i < nbX; i ++){ 
+      d.push_back(fdesc.bornersVar[i][0]);
     }
     D0.push_back(d);
     d = {};
-    d.push_back(fdesc.bornersVar[0][0] + steps[0]*i);
-    for(int j = 1; j < nbX; j++){
-      d.push_back(fdesc.bornersVar[j][0]);
+    //all until j at max all after at min
+    for(int i = 0; i < j; i ++){ 
+      d.push_back(fdesc.bornersVar[i][1]);
+    }
+    d.push_back(fdesc.bornersVar[j][1]);
+    for(int i = j+1; i < nbX; i ++){ 
+      d.push_back(fdesc.bornersVar[i][0]);
     }
     D0.push_back(d);
     d = {};
+    //all except j at max
+    for(int i = 0; i < j; i ++){ 
+      d.push_back(fdesc.bornersVar[i][1]);
+    }
+    d.push_back(fdesc.bornersVar[j][0]);
+    for(int i = j+1; i < nbX; i ++){ 
+      d.push_back(fdesc.bornersVar[i][1]);
+    }
+    D0.push_back(d);
+    d = {};
+  }
+  
+  return D0;
+}
+
+std::vector<std::vector<double>> step0_random(int nbPoints, struct Multivariate_RemezIIParameters remezdesc, struct Multivariate_functionDescription fdesc){
+  srand (42);
+  std::vector<std::vector<double>> D0 = {};
+  std::vector<double> temp = {};
+  for(int i = 0; i<nbPoints; i++){
+    for(int j = 0; j < fdesc.bornersVar.size(); j ++){ 
+      temp.push_back(((double)rand()/RAND_MAX)*(fdesc.bornersVar[j][1] - fdesc.bornersVar[j][0])+fdesc.bornersVar[j][0]);
+    }
+    D0.push_back(temp);
+    temp = {};
   }
   return D0;
 }
 
-std::vector<double> step1(std::vector<std::vector<double>> D, struct Multivariate_functionDescription fdesc, struct Multivariate_RemezIParameters remezdesc, struct Multivariate_Polynomiale poly){
+std::vector<double> step1(std::vector<std::vector<double>> D, struct Multivariate_functionDescription fdesc, struct Multivariate_RemezIIParameters remezdesc, struct Multivariate_Polynomiale poly){
   string path = createPath();
   std::vector<std::vector<double>> p = {};
   for(int j = 0; j< D.size(); j++){
@@ -384,6 +432,31 @@ std::vector<double> step1(std::vector<std::vector<double>> D, struct Multivariat
       return primDouble;
    }   
 }
+/*
+std::vector<std::vector<double>> step2(std::vector<double> A, struct Multivariate_RemezIIParameters remezdesc, string path){
+  std::vector<std::vector<double>> pointsSide = {};
+  std::vector<std::vector<double>> pointsCenter = {};
+  //Getting the points
+  pointsSide = step2_side(struct Multivariate_RemezIIParameters remezdesc, string path);
+  pointsCenter = step2_center(struct Multivariate_RemezIIParameters remezdesc, string path);
+  //Getting every points together
+  pointsCenter.insert( pointsCenter.end(), pointsSide.begin(), pointsSide.end() );
+ 
+  return pointsCenter; 
+}
+
+std::vector<std::vector<double>> step2_side(struct Multivariate_RemezIIParameters remezdesc, string path){
+    
+}
+
+std::vector<std::vector<double>> step2_center(struct Multivariate_RemezIIParameters remezdesc, string path){
+
+  Function f("x","y","z","x*y*z");
+    Function df(f,Function::DIFF);
+  cout << "df=" << df << endl;
+
+}
+*/
 
 /*-----------------------------------------------------------------*/
 /* OUTPUT */
@@ -394,15 +467,14 @@ string createPath(){
   return path;
 }
 
-void write_introduction(string path, struct Multivariate_RemezIParameters remezdesc){
+void write_introduction(string path, struct Multivariate_RemezIIParameters remezdesc){
   std::ofstream summary;
-  summary.open(path + "summary/" + remezdesc.fdesc.functionString + ".txt", std::ios_base::app);
+  summary.open(path + "summary/" + remezdesc.fdesc.functionString + ".txt",std::ofstream::trunc);
   summary << "Welcome to the summary of ";
   summary << "Remez 1 multi ";
   summary << "for multivariate polynomial approximation. \n";
   summary << "With the following parameters : \n";
   summary << "degree of approximation = " << remezdesc.approximationDegree << "\n";
-  summary << "size of first discretization =" << remezdesc.sizeD0 << "\n";
   summary << "maximum number of turns = " << remezdesc.maxNbTurns << "\n";
   summary << "approximation of error = " << remezdesc.approximationResult << "\n";
   summary << "approximation of points = " << remezdesc.approximationPoints << "\n";
@@ -414,7 +486,7 @@ void write_introduction(string path, struct Multivariate_RemezIParameters remezd
   summary << "For the function " << remezdesc.fdesc.functionString << ".\n";
 }
 
-void writeD(struct Multivariate_RemezIParameters remezdesc, std::vector<std::vector<double>> D, string path){
+void writeD(struct Multivariate_RemezIIParameters remezdesc, std::vector<std::vector<double>> D, string path){
   std::ofstream summary;
   summary.open(path + "summary/" + remezdesc.fdesc.functionString + ".txt", std::ios_base::app);
   summary << "Generated D0 is : ";
@@ -427,49 +499,11 @@ void writeD(struct Multivariate_RemezIParameters remezdesc, std::vector<std::vec
   }
 }
 
-double step2(std::vector<double> A, struct Multivariate_RemezIParameters remezdesc, string path){
-  createModelStep2(A, remezdesc, path);
-  string fullPathToModel = path + "models/step2_model.txt";
-  ofstream step2R(path + "stepResult/step2_result.txt");
-
-  System sys(fullPathToModel.c_str());
-  DefaultOptimizer optimizer(sys,1e-09, 1e-10);
-  optimizer.optimize(sys.box);
-  optimizer.report();
-  
-  step2R << "minimizer: " << optimizer.get_loup_point() << endl;
-  step2R << "uplo " << optimizer.get_uplo() << "\n" << endl;
-  step2R << "loup " << optimizer.get_loup() << endl;
-  step2R << optimizer.get_data();
-  step2R.close();
-  return 0.0;
-}
-
-void createModelStep2(std::vector<double> A, struct Multivariate_RemezIParameters remezdesc, string path){
-  ofstream step2(path + "models/step2_model.txt");
-  step2 << "Variables\n";
-  
-  for(int i=0; i<remezdesc.fdesc.bornersVar.size(); i++){
-  step2 << "  x" << i << "in [" << remezdesc.fdesc.bornersVar[i][0] <<" , " << remezdesc.fdesc.bornersVar[i][1] <<"];\n";
-  }
-  std::vector<string> p = remezdesc.poly.derivatedPhi(A, remezdesc.fdesc.nbX, remezdesc.approximationDegree);
-  
-  step2 << "\nMinimize\n";
-  step2 << "  -abs(0" ;
-  for(int j = 0; j < p.size(); j++){
-    step2 << "+(" << p[j] << ")";
-  }
-  step2 << "(-(" << remezdesc.fdesc.functionString << "))); \n";
-  step2 << "\nConstraints\n";
-  step2 << "end";
-  step2.close();
-}
-
 /*-----------------------------------------------------------------*/
 /* GRAPHS */
 /*-----------------------------------------------------------------*/
 
-void createErrorGraph(struct Multivariate_RemezIParameters remezdesc, string path){
+void createErrorGraph(struct Multivariate_RemezIIParameters remezdesc, string path){
   
 
 
@@ -485,7 +519,6 @@ void createErrorGraph(struct Multivariate_RemezIParameters remezdesc, string pat
       x.push_back(x0[i]);
       x.push_back(x1[j]);
       e.push_back(error(remezdesc.poly, x, remezdesc.fdesc.f));
-      cout << error(remezdesc.poly, x, remezdesc.fdesc.f) << " , ";
       x = {};
     }
   }
@@ -506,8 +539,6 @@ void createErrorGraph(struct Multivariate_RemezIParameters remezdesc, string pat
   canvas.show();
   canvas.save(path + "errorEndStep1.pdf");
 }
-
-
 
 
 
