@@ -273,14 +273,20 @@ int main(int argc, char** argv) {
   remezdesc.poly = initializePhiBasic();
   remezdesc.poly.degree = degree;
   write_introduction(path, remezdesc);
-  //std::vector<std::vector<double>> D = step0(fdesc.nbX, remezdesc, fdesc);
-  int nbPoints = 5;
-  std::vector<std::vector<double>> D = step0_random(nbPoints, remezdesc, fdesc);
+  
+  
+  std::vector<std::vector<double>> D = step0(fdesc.nbX, remezdesc, fdesc);
+  //int nbPoints = 1000;
+  //std::vector<std::vector<double>> D = step0_random(nbPoints, remezdesc, fdesc);
+  
+  
   writeD(remezdesc, D, path);
   remezdesc.poly.a = step1(D, fdesc, remezdesc, remezdesc.poly);
+  
   //Taking the error out of the polynomial
   errorStep1 = remezdesc.poly.a[remezdesc.poly.a.size()-1];
   remezdesc.poly.a.pop_back();
+  
   //writeA(remezdesc.poly.a, path, fdesc.functionString);
   //createErrorGraph(remezdesc, path);
   write_data_for_graphs(remezdesc.poly.a, fdesc.bornersVar);
