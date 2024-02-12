@@ -275,9 +275,9 @@ int main(int argc, char** argv) {
   write_introduction(path, remezdesc);
   
   
-  std::vector<std::vector<double>> D = step0(fdesc.nbX, remezdesc, fdesc);
-  //int nbPoints = 1000;
-  //std::vector<std::vector<double>> D = step0_random(nbPoints, remezdesc, fdesc);
+  //std::vector<std::vector<double>> D = step0(fdesc.nbX, remezdesc, fdesc);
+  int nbPoints = 1000;
+  std::vector<std::vector<double>> D = step0_random(nbPoints, remezdesc, fdesc);
   
   
   writeD(remezdesc, D, path);
