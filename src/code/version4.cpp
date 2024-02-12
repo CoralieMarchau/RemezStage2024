@@ -288,7 +288,7 @@ int main(int argc, char** argv) {
   remezdesc.poly.a.pop_back();
   
   //writeA(remezdesc.poly.a, path, fdesc.functionString);
-  //createErrorGraph(remezdesc, path);
+  createErrorGraph(remezdesc, path);
   write_data_for_graphs(remezdesc.poly.a, fdesc.bornersVar);
   //double newPoints = step2(remezdesc.poly.a, remezdesc, path);
 }
@@ -533,18 +533,18 @@ void write_data_for_graphs(std::vector<double> A, std::vector<std::vector<double
 /*-----------------------------------------------------------------*/
 
 void createErrorGraph(struct Multivariate_RemezIIParameters remezdesc, string path){
-  
-
-
-
-   //TO DEBUG
+     //TO DEBUG
   Vec x0 = linspace(remezdesc.fdesc.bornersVar[0][0], remezdesc.fdesc.bornersVar[0][1], 100);
   Vec x1 = linspace(remezdesc.fdesc.bornersVar[1][0], remezdesc.fdesc.bornersVar[1][1], 100);
-  std::vector<double> e;
+  std::vector<double> e={};
+  std::vector<double> X0={};
+  std::vector<double> X1={};
   std::vector<double> x = {};
   int i = 0;
   for (int i = 0; i<x0.size(); i++) {
     for (int j=0; j<x1.size(); j++) {
+      X0.push_back(x0[i]);
+      X1.push_back(x1[j]);
       x.push_back(x0[i]);
       x.push_back(x1[j]);
       e.push_back(error(remezdesc.poly, x, remezdesc.fdesc.f));
@@ -562,7 +562,7 @@ void createErrorGraph(struct Multivariate_RemezIIParameters remezdesc, string pa
   plot.border().leftVertical();
   
   plot.palette("dark2");
-  plot.drawCurve(x0, x1, e).label("error");
+  plot.drawCurve(X0, X1, e).label("error");
   Figure fig = {{plot}};
   Canvas canvas = {{fig}};
   canvas.show();
