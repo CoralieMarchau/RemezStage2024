@@ -276,7 +276,7 @@ int main(int argc, char** argv) {
   
   
   //std::vector<std::vector<double>> D = step0(fdesc.nbX, remezdesc, fdesc);
-  int nbPoints = 1000;
+  int nbPoints = 5;
   std::vector<std::vector<double>> D = step0_random(nbPoints, remezdesc, fdesc);
   
   
