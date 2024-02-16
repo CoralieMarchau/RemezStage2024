@@ -76,6 +76,8 @@ std::vector<std::vector<double>> step0_random(int nbPoints, struct Multivariate_
 void write_data_for_graphs(std::vector<double> A, std::vector<std::vector<double>> bornersVar);
 std::vector<std::vector<double>> step2_center(struct Multivariate_RemezIIParameters remezdesc, string path);
 void createModelStep2(std::vector<double> A, struct Multivariate_RemezIIParameters remezdesc, string path);
+void createModelStep2_side(std::vector<double> A, struct Multivariate_RemezIIParameters remezdesc,int borner, string path, int var);
+std::vector<std::vector<double>> step2_side(struct Multivariate_RemezIIParameters remezdesc, string path);
 /*-----------------------------------------------------------------*/
 /* FUNCTIONS TO APPROXIMATE */
 /*-----------------------------------------------------------------*/
@@ -258,9 +260,9 @@ int main(int argc, char** argv) {
   write_introduction(path, remezdesc);
   
   
-  std::vector<std::vector<double>> D = step0(fdesc.nbX, remezdesc, fdesc);
-  //int nbPoints = 1000;
-  //std::vector<std::vector<double>> D = step0_random(nbPoints, remezdesc, fdesc);
+  //std::vector<std::vector<double>> D = step0(fdesc.nbX, remezdesc, fdesc);
+  int nbPoints = 10;
+  std::vector<std::vector<double>> D = step0_random(nbPoints, remezdesc, fdesc);
   
   
   writeD(remezdesc, D, path);
@@ -433,9 +435,9 @@ std::vector<std::vector<double>> step2(std::vector<double> A, struct Multivariat
   std::vector<std::vector<double>> pointsCenter = {};
   //Getting the points
   pointsCenter = step2_center(remezdesc, path);
-  
+  pointsSide = step2_side(remezdesc, path);
   //To see later
-  /*pointsSide = step2_side(struct Multivariate_RemezIIParameters remezdesc, string path);
+  /*
   
   //Getting every points together
   pointsCenter.insert(pointsCenter.end(), pointsSide.begin(), pointsSide.end());*/
@@ -444,14 +446,81 @@ std::vector<std::vector<double>> step2(std::vector<double> A, struct Multivariat
 }
 
 std::vector<std::vector<double>> step2_side(struct Multivariate_RemezIIParameters remezdesc, string path){
+  std::ofstream data;
+  data.open("data/points.txt",  std::ios_base::app);
   std::vector<std::vector<double>> newPoints = {{}};
+  for(int i = 0; i  < remezdesc.fdesc.bornersVar.size(); i++){
+    createModelStep2_side(remezdesc.poly.a, remezdesc, remezdesc.fdesc.bornersVar[i][0], path, i);
+    
+    string fullpath = path + "models/step2_model_side.txt";
+    System system(fullpath.c_str());
+    DefaultSolver solver(system,1e-09, 1e-15);
+    solver.solve(system.box);
+    solver.report();
+    data << solver.get_data() << endl;
+    
+   // newPoints = getResultSide(newPoints);
+    createModelStep2_side(remezdesc.poly.a, remezdesc, remezdesc.fdesc.bornersVar[i][1], path, i);
+    
+    fullpath = path + "models/step2_model_side.txt";
+    System system2(fullpath.c_str());
+    DefaultSolver solver2(system2,1e-09, 1e-15);
+    solver2.solve(system2.box);
+    solver2.report();
+    data << solver2.get_data() << endl;
+    //newPoints = getResultSide(newPoints);
+  }
   return newPoints;
 }
 
+void createModelStep2_side(std::vector<double> A, struct Multivariate_RemezIIParameters remezdesc, int borner, string path, int var){
+  ofstream step2(path + "models/step2_model_side.txt");
+  step2 << setprecision(13);
+  
+  step2 << "Variables\n";
+  for(int i = 0; i<remezdesc.fdesc.bornersVar.size(); i++){
+    step2 << "  x"<< i+1 <<" in [" << remezdesc.fdesc.bornersVar[i][0] <<" , " << remezdesc.fdesc.bornersVar[i][1] <<"];\n";
+  }
+  step2 << "\nConstraints\n";
+  std::vector<std::vector<int>> p = remezdesc.poly.derivatedPhi(remezdesc.fdesc.bornersVar.size(), remezdesc.approximationDegree);
+  for(int i = 0; i<remezdesc.fdesc.nbX; i=i+1){
+    if(i != var){
+      step2 << remezdesc.fdesc.derivedFunctionStrings[i] << "-("; //derivated of f depending xi
+      for(int j=0; j<p.size(); j++){//P'(x) depending of each x
+        if(p[j][i]>0){
+          step2 << " + " << A[j] ;
+          for(int k=0; k<p[j].size(); k++){
+            if(k==i){
+              if(p[j][k]>1){
+                step2 << "*(x" << k+1 << "*" << p[j][k] << ")^" << p[j][k]-1;
+              }
+            } else {
+              if(p[j][k]>1){
+                step2 << "*(x" << k+1 << ")^" << p[j][k];
+              }
+            }
+          }
+        }
+      }
+      step2 << ")=0;\n"; 
+    }
+  }
+  
+  step2 << "x" << var+1 << "=" << borner <<";\n";
+  step2 << "end";
+}
+
 std::vector<std::vector<double>> step2_center(struct Multivariate_RemezIIParameters remezdesc, string path){
+  std::ofstream data;
+  data.open("data/points.txt",std::ofstream::trunc);
   std::vector<std::vector<double>> newPoints = {{}};
   createModelStep2(remezdesc.poly.a, remezdesc, path);
-  
+  string fullpath = path + "models/step2_model.txt";
+  System system(fullpath.c_str());
+  DefaultSolver solver(system,1e-09, 1e-15);
+  solver.solve(system.box);
+  solver.report();
+  data << solver.get_data() << endl;
   return newPoints;
 
 }
@@ -488,8 +557,6 @@ void createModelStep2(std::vector<double> A, struct Multivariate_RemezIIParamete
   }
   
   //2nd derivative test
-  
-  //what to do of inconclusive points ?
   
   for(int i = 0; i<remezdesc.fdesc.nbX; i=i+1){
     step2 << "(" << remezdesc.fdesc.derivedFunctionStrings[i+remezdesc.fdesc.nbX] << "-(0";
@@ -540,36 +607,6 @@ void createModelStep2(std::vector<double> A, struct Multivariate_RemezIIParamete
   step2.close();
 
 }
-
-/* Version "one point" doesn't give the maximum maximum.
-void createModelStep2(std::vector<double> A, struct Multivariate_RemezIIParameters remezdesc, string path){
-  ofstream step2(path + "models/step2_model.txt");
-  step2 << setprecision(13);
-  step2 << "Variables\n";
-  for(int i = 0; i<remezdesc.fdesc.bornersVar.size(); i++){
-    step2 << "  x"<< i+1 <<" in [" << remezdesc.fdesc.bornersVar[i][0] <<" , " << remezdesc.fdesc.bornersVar[i][1] <<"];\n";
-  }
-  
-  std::vector<std::vector<int>> p = remezdesc.poly.derivatedPhi(remezdesc.fdesc.bornersVar.size(), remezdesc.approximationDegree);
-  int nbXActive = 0;
-  step2 << "\nMinimize\n";
-  step2 << "  -abs(" ;
-  for(int i = 0; i<A.size(); i++){
-    step2 << A[i];
-    for(int j = 0; j < p[i].size(); j++){
-      if(p[i][j]>0){
-        step2 << "*(x" <<j+1<<"^" << p[i][j] << ")";
-      }
-    }
-    nbXActive = 0;
-    step2 << " + ";
-  }
-  step2 << "(-(" << remezdesc.fdesc.functionString << "))); \n";
-  step2 << "\nConstraints\n";
-  step2 << "end";
-  step2.close();
-}
-*/
 
 /*-----------------------------------------------------------------*/
 /* OUTPUT */
@@ -628,7 +665,11 @@ void write_data_for_graphs(std::vector<double> A, std::vector<std::vector<double
     data << bornersVar[i][0] << " " << bornersVar[i][1] << " ";
   }
 }
+/*
+std::vector<std::vector<double>> getResultSide(){
 
+}
+*/
 /*-----------------------------------------------------------------*/
 /* GRAPHS */
 /*-----------------------------------------------------------------*/

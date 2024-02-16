@@ -1,0 +1,8 @@
+Variables
+  x1 in [0 , 1];
+  x2 in [0 , 1];
+
+Constraints
+2*x1-( + 0.9943358842)=0;
+x2=1;
+end
