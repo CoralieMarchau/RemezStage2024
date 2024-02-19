@@ -76,7 +76,7 @@ std::vector<std::vector<double>> step0_random(int nbPoints, struct Multivariate_
 void write_data_for_graphs(std::vector<double> A, std::vector<std::vector<double>> bornersVar);
 std::vector<std::vector<double>> step2_center(struct Multivariate_RemezIIParameters remezdesc, string path);
 void createModelStep2(std::vector<double> A, struct Multivariate_RemezIIParameters remezdesc, string path);
-void createModelStep2_side(std::vector<double> A, struct Multivariate_RemezIIParameters remezdesc,int borner, string path, int var);
+void createModelStep2_side(std::vector<double> A, struct Multivariate_RemezIIParameters remezdesc,double borner, string path, int var);
 std::vector<std::vector<double>> step2_side(struct Multivariate_RemezIIParameters remezdesc, string path);
 /*-----------------------------------------------------------------*/
 /* FUNCTIONS TO APPROXIMATE */
@@ -245,37 +245,69 @@ struct Multivariate_Polynomiale initialize_poly(std::vector<double>(*phi)(std::v
 /*-----------------------------------------------------------------*/
 
 int main(int argc, char** argv) { 
-  int nbTurns = 100;
+  int nbTurns = 5;
   int degree = 1;
   double errorStep1 = 0;
   string path = createPath();
   struct Multivariate_RemezIIParameters remezdesc;
-  struct Multivariate_functionDescription fdesc;
-  //struct Multivariate_Polynomiale poly;
-  
-  fdesc = initializeF0();
-  remezdesc = initialize_remezdesc(fdesc, degree, nbTurns);
+  int typeOfD0 = 1;
+  remezdesc = initialize_remezdesc(initializeF0(), degree, nbTurns);
   remezdesc.poly = initializePhiBasic();
   remezdesc.poly.degree = degree;
   write_introduction(path, remezdesc);
   
-  
+  //for(int i = typeOfD0; i<=4; i++){
+    int i = 5;
+    std::vector<std::vector<double>> D ;
+    int nbPoints;
+    switch (i){
+      case 1:
+        nbPoints = 5;
+        D = step0_random(nbPoints, remezdesc, remezdesc.fdesc);
+        cout << "\nRANDOM 5\n";
+        break;
+      case 2:
+        nbPoints = 10;
+        D = step0_random(nbPoints, remezdesc, remezdesc.fdesc);
+        cout << "\nRANDOM 10\n";
+        break;
+      case 3:
+        nbPoints = 100;
+        D = step0_random(nbPoints, remezdesc, remezdesc.fdesc);
+        cout << "\nRANDOM 100\n";
+        break;
+      case 4:
+         nbPoints = 1000;
+         D = step0_random(nbPoints, remezdesc, remezdesc.fdesc);
+         cout << "\nRANDOM 1000\n";
+         break;
+       case 5:
+         D = step0(remezdesc.fdesc.nbX, remezdesc, remezdesc.fdesc);
+         cout << "\nEXTREME AND CENTER\n";
+         break;
+       default:
+         D = step0(remezdesc.fdesc.nbX, remezdesc, remezdesc.fdesc);
+         std::cout << "ISSUE FOR D0\n";
+         break;
+      }
+    for(int j = 0; j<nbTurns; j++){
   //std::vector<std::vector<double>> D = step0(fdesc.nbX, remezdesc, fdesc);
-  int nbPoints = 10;
-  std::vector<std::vector<double>> D = step0_random(nbPoints, remezdesc, fdesc);
-  
-  
-  writeD(remezdesc, D, path);
-  remezdesc.poly.a = step1(D, fdesc, remezdesc, remezdesc.poly);
+    //int nbPoints = 10;
+    //std::vector<std::vector<double>> D = step0_random(nbPoints, remezdesc, remezdesc.fdesc);
+      writeD(remezdesc, D, path);
+      remezdesc.poly.a = step1(D, remezdesc.fdesc, remezdesc, remezdesc.poly);
   
   //Taking the error out of the polynomial
-  errorStep1 = remezdesc.poly.a[remezdesc.poly.a.size()-1];
-  remezdesc.poly.a.pop_back();
+     errorStep1 = remezdesc.poly.a[remezdesc.poly.a.size()-1];
+     remezdesc.poly.a.pop_back();
   
-  
-  createErrorGraph(remezdesc, path);
-  write_data_for_graphs(remezdesc.poly.a, fdesc.bornersVar);
-  std::vector<std::vector<double>> newPoints = step2(remezdesc.poly.a, remezdesc, path);
+  //createErrorGraph(remezdesc, path);
+     write_data_for_graphs(remezdesc.poly.a, remezdesc.fdesc.bornersVar);
+     std::vector<std::vector<double>> newPoints = step2(remezdesc.poly.a, remezdesc, path);
+     D.insert(D.end(), newPoints.begin(), newPoints.end());
+   }
+   cout << "\n---------------------------------------------------------------\n";
+  //}
 }
 
 /*-----------------------------------------------------------------*/
@@ -436,11 +468,9 @@ std::vector<std::vector<double>> step2(std::vector<double> A, struct Multivariat
   //Getting the points
   pointsCenter = step2_center(remezdesc, path);
   pointsSide = step2_side(remezdesc, path);
-  //To see later
-  /*
   
   //Getting every points together
-  pointsCenter.insert(pointsCenter.end(), pointsSide.begin(), pointsSide.end());*/
+  pointsCenter.insert(pointsCenter.end(), pointsSide.begin(), pointsSide.end());
  
   return pointsCenter; 
 }
@@ -448,7 +478,8 @@ std::vector<std::vector<double>> step2(std::vector<double> A, struct Multivariat
 std::vector<std::vector<double>> step2_side(struct Multivariate_RemezIIParameters remezdesc, string path){
   std::ofstream data;
   data.open("data/points.txt",  std::ios_base::app);
-  std::vector<std::vector<double>> newPoints = {{}};
+  std::vector<std::vector<double>> newPoints = {};
+  std::vector<double> point;
   for(int i = 0; i  < remezdesc.fdesc.bornersVar.size(); i++){
     createModelStep2_side(remezdesc.poly.a, remezdesc, remezdesc.fdesc.bornersVar[i][0], path, i);
     
@@ -457,9 +488,15 @@ std::vector<std::vector<double>> step2_side(struct Multivariate_RemezIIParameter
     DefaultSolver solver(system,1e-09, 1e-15);
     solver.solve(system.box);
     solver.report();
-    data << solver.get_data() << endl;
-    
-   // newPoints = getResultSide(newPoints);
+    for(int i = 0; i<solver.get_data().size(); i++){
+      for(int j = 0; j<solver.get_data()[i].size(); j++){
+        point.push_back(solver.get_data()[i][j].mid());
+        data << solver.get_data()[i][j].mid() << " ";
+      }
+      data << "\n";
+      newPoints.push_back(point);
+      point = {};
+    }
     createModelStep2_side(remezdesc.poly.a, remezdesc, remezdesc.fdesc.bornersVar[i][1], path, i);
     
     fullpath = path + "models/step2_model_side.txt";
@@ -467,19 +504,31 @@ std::vector<std::vector<double>> step2_side(struct Multivariate_RemezIIParameter
     DefaultSolver solver2(system2,1e-09, 1e-15);
     solver2.solve(system2.box);
     solver2.report();
-    data << solver2.get_data() << endl;
-    //newPoints = getResultSide(newPoints);
+    
+    for(int i = 0; i<solver2.get_data().size(); i++){
+      for(int j = 0; j<solver2.get_data()[i].size(); j++){
+        point.push_back(solver2.get_data()[i][j].mid());
+        data << solver2.get_data()[i][j].mid() << " ";
+      }
+      data << "\n";
+      newPoints.push_back(point);
+      point = {};
+    }
   }
   return newPoints;
 }
 
-void createModelStep2_side(std::vector<double> A, struct Multivariate_RemezIIParameters remezdesc, int borner, string path, int var){
+void createModelStep2_side(std::vector<double> A, struct Multivariate_RemezIIParameters remezdesc, double borner, string path, int var){
   ofstream step2(path + "models/step2_model_side.txt");
   step2 << setprecision(13);
   
   step2 << "Variables\n";
   for(int i = 0; i<remezdesc.fdesc.bornersVar.size(); i++){
-    step2 << "  x"<< i+1 <<" in [" << remezdesc.fdesc.bornersVar[i][0] <<" , " << remezdesc.fdesc.bornersVar[i][1] <<"];\n";
+    if(i != var){
+      step2 << "  x"<< i+1 <<" in [" << remezdesc.fdesc.bornersVar[i][0] <<" , " << remezdesc.fdesc.bornersVar[i][1] <<"];\n";
+    } else {
+      step2 << "  x"<< i+1 <<" in [" << borner <<" , " << borner <<"];\n";
+    }
   }
   step2 << "\nConstraints\n";
   std::vector<std::vector<int>> p = remezdesc.poly.derivatedPhi(remezdesc.fdesc.bornersVar.size(), remezdesc.approximationDegree);
@@ -513,16 +562,24 @@ void createModelStep2_side(std::vector<double> A, struct Multivariate_RemezIIPar
 std::vector<std::vector<double>> step2_center(struct Multivariate_RemezIIParameters remezdesc, string path){
   std::ofstream data;
   data.open("data/points.txt",std::ofstream::trunc);
-  std::vector<std::vector<double>> newPoints = {{}};
+  std::vector<std::vector<double>> newPoints = {};
+  std::vector<double> point= {};
   createModelStep2(remezdesc.poly.a, remezdesc, path);
   string fullpath = path + "models/step2_model.txt";
   System system(fullpath.c_str());
   DefaultSolver solver(system,1e-09, 1e-15);
   solver.solve(system.box);
   solver.report();
-  data << solver.get_data() << endl;
+  for(int i = 0; i<solver.get_data().size(); i++){
+    for(int j = 0; j<solver.get_data()[i].size(); j++){
+      point.push_back(solver.get_data()[i][j].mid());
+      data << solver.get_data()[i][j].mid() << " ";
+    }
+    data << "\n";
+    newPoints.push_back(point);
+    point = {};
+  }
   return newPoints;
-
 }
 
 void createModelStep2(std::vector<double> A, struct Multivariate_RemezIIParameters remezdesc, string path){
@@ -665,11 +722,7 @@ void write_data_for_graphs(std::vector<double> A, std::vector<std::vector<double
     data << bornersVar[i][0] << " " << bornersVar[i][1] << " ";
   }
 }
-/*
-std::vector<std::vector<double>> getResultSide(){
 
-}
-*/
 /*-----------------------------------------------------------------*/
 /* GRAPHS */
 /*-----------------------------------------------------------------*/
