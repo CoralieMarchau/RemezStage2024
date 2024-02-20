@@ -78,6 +78,8 @@ std::vector<std::vector<double>> step2_center(struct Multivariate_RemezIIParamet
 void createModelStep2(std::vector<double> A, struct Multivariate_RemezIIParameters remezdesc, string path);
 void createModelStep2_side(std::vector<double> A, struct Multivariate_RemezIIParameters remezdesc,double borner, string path, int var);
 std::vector<std::vector<double>> step2_side(struct Multivariate_RemezIIParameters remezdesc, string path);
+std::vector<std::vector<double>> noCopyAdd(std::vector<std::vector<double>> v1, std::vector<std::vector<double>> v2);
+double step2Error(std::vector<std::vector<double>> newPoints, std::vector<double> a, struct Multivariate_RemezIIParameters remezdesc);
 /*-----------------------------------------------------------------*/
 /* FUNCTIONS TO APPROXIMATE */
 /*-----------------------------------------------------------------*/
@@ -247,8 +249,10 @@ struct Multivariate_Polynomiale initialize_poly(std::vector<double>(*phi)(std::v
 int main(int argc, char** argv) { 
   int nbTurns = 5;
   int degree = 1;
+  double errorStep2 = 0;
   double errorStep1 = 0;
   string path = createPath();
+  std::vector<std::vector<double>> newPoints;
   struct Multivariate_RemezIIParameters remezdesc;
   int typeOfD0 = 1;
   remezdesc = initialize_remezdesc(initializeF0(), degree, nbTurns);
@@ -257,7 +261,7 @@ int main(int argc, char** argv) {
   write_introduction(path, remezdesc);
   
   //for(int i = typeOfD0; i<=4; i++){
-    int i = 5;
+    int i = 1;
     std::vector<std::vector<double>> D ;
     int nbPoints;
     switch (i){
@@ -303,11 +307,21 @@ int main(int argc, char** argv) {
   
   //createErrorGraph(remezdesc, path);
      write_data_for_graphs(remezdesc.poly.a, remezdesc.fdesc.bornersVar);
-     std::vector<std::vector<double>> newPoints = step2(remezdesc.poly.a, remezdesc, path);
-     D.insert(D.end(), newPoints.begin(), newPoints.end());
+     newPoints = step2(remezdesc.poly.a, remezdesc, path);
+     errorStep2 = step2Error(newPoints, remezdesc.poly.a, remezdesc);
+     D = noCopyAdd(newPoints, D);
+     cout << errorStep2 - errorStep1;
    }
    cout << "\n---------------------------------------------------------------\n";
   //}
+}
+
+double step2Error(std::vector<std::vector<double>> newPoints, std::vector<double> a, struct Multivariate_RemezIIParameters remezdesc){
+  double errorStep = 0;
+  for(int i = 0; i< newPoints.size(); i++){
+    errorStep = std::max(error(remezdesc.poly, newPoints[i], remezdesc.fdesc.f), errorStep);
+  }
+  return errorStep;
 }
 
 /*-----------------------------------------------------------------*/
@@ -696,7 +710,7 @@ void write_introduction(string path, struct Multivariate_RemezIIParameters remez
 void writeD(struct Multivariate_RemezIIParameters remezdesc, std::vector<std::vector<double>> D, string path){
   std::ofstream summary;
   summary.open(path + "summary/" + remezdesc.fdesc.functionString + ".txt", std::ios_base::app);
-  summary << "Generated D0 is : ";
+  summary << "\nGenerated D0 is : ";
   for(int i=0; i<D.size(); i++){
     summary << "[";
     for(int j=0; j<D[i].size(); j++){
@@ -721,6 +735,17 @@ void write_data_for_graphs(std::vector<double> A, std::vector<std::vector<double
   for(int i = 0; i<bornersVar.size(); i++){
     data << bornersVar[i][0] << " " << bornersVar[i][1] << " ";
   }
+}
+
+std::vector<std::vector<double>> noCopyAdd(std::vector<std::vector<double>> v1, std::vector<std::vector<double>> v2){
+  bool toNotAdd = true;
+  std::vector<std::vector<double>> v = v1;
+  
+  v.insert(v.end(), v2.begin(), v2.end());
+  std::sort(v.begin(), v.end());
+  // Remove duplicate values from vector
+  v.erase(std::unique(v.begin(), v.end()), v.end());
+  return v;
 }
 
 /*-----------------------------------------------------------------*/
