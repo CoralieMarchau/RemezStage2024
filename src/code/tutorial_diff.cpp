@@ -6,10 +6,12 @@ using namespace ibex;
 int main(int argc, char* argv[]){
 
   // Dérivée symbolique directement sortie de la doc
-  Function f("x","y","z","x*y*z");
+  Function f("x","y", "ln(x+y)*sin(x)");
 	Function df(f,Function::DIFF);
 	cout << "df=" << df << endl;
-
+	//Function df2(df,Function::DIFF);
+	//cout << "ddf=" << df2 << endl;
+/*
   // Il est aussi possible de dériver uniquement par rapport à certaines variables, par exemple ici, on va dériver par rapport à x et z
   Dim d(1,1); // Build the dimension of a scalar
   const ExprSymbol& x = ExprSymbol::new_("x",d); // nouvel argument de dimension (1,1)
@@ -27,5 +29,5 @@ int main(int argc, char* argv[]){
   const ExprNode& expr_df_xz = df_xz.diff(f.expr(),diff_args); // Calcul l'expression de la dérivée de f par rapport à x et z
   Function df_(new_args,expr_df_xz); // Création de la fonction dérivée
   cout << "df_=" << df_ << endl;
-
+*/
 }
