@@ -115,7 +115,9 @@ void grapheConvergenceComparisons(std::vector<struct Univariate_RemezIResult>rem
 /* FUNCTIONS TO APPROXIMATE */
 /*-----------------------------------------------------------------*/
 double f(double x) {
-  return cos(x)+sin(5*x)+pow(x,2);
+ // return cos(x)+sin(5*x)+pow(x,2);
+ // return exp(x);
+ return (1/x);
 }
 
 double P(std::vector<double> A, double x){
@@ -137,20 +139,22 @@ double error(std::vector<double> A, double x){
 
 struct Univariate_functionDescription initialize_fdesc(){
   struct Univariate_functionDescription fdesc;
-  fdesc.functionString = "cos(x)+sin(5*x)+x^2";
-  fdesc.derivedFunctionString = "-sin(x)+5*cos(5*x)+2*x";
+  //fdesc.functionString = "cos(x)+sin(5*x)+x^2";
+  //fdesc.derivedFunctionString = "-sin(x)+5*cos(5*x)+2*x";
+  fdesc.functionString = "1/x";
+  fdesc.derivedFunctionString = "-1/(x^2)";
   fdesc.f = (*f);
   return fdesc;
 }
 
 struct Univariate_RemezIParameters initialize_remezdesc(struct Univariate_functionDescription fdesc){
   struct Univariate_RemezIParameters remezdesc;
-  remezdesc.approximationDegree = 10;
+  remezdesc.approximationDegree = 2;
   remezdesc.sizeD0 = 12; //Warning, if exchange, sizeD0 value will be replaced by degree+2
   remezdesc.maxNbTurns = 100;
   remezdesc.approximationResult = 1.e-10;
   remezdesc.approximationPoints = 1.e-15;
-  remezdesc.bornersVar = {-1 , 1}; //Warning, remember to put in crescent order
+  remezdesc.bornersVar = {1 , 7}; //Warning, remember to put in crescent order
   remezdesc.fdesc = fdesc;
   remezdesc.remezPlus = false ;
   remezdesc.exchange = false ; // Warning, if remezPlus, exchange must be ignored.
@@ -234,7 +238,7 @@ struct Univariate_RemezIResult univariateRemez(struct Univariate_RemezIParameter
     grapheError(A, remezdesc.fdesc.functionString, turn, remezdesc.approximationDegree, remezdesc.bornersVar, errorStep2[errorStep2.size()-1], path);
     //Checking if a new turn is needed
     itIsNotOver = itIsNotOver && turn < remezdesc.maxNbTurns;
-    itIsNotOver = itIsNotOver && ((errorStep2[errorStep2.size()-1]-errorStep1[errorStep1.size()-1]) > remezdesc.approximationResult);
+    itIsNotOver = itIsNotOver && (abs(errorStep2[errorStep2.size()-1]-errorStep1[errorStep1.size()-1]) > remezdesc.approximationResult);
     writeD(D, path, remezdesc, turn);
   }
   grapheConvergenceRemez1(errorStep1, errorStep2, turn, path); //Prints the convergence of errors

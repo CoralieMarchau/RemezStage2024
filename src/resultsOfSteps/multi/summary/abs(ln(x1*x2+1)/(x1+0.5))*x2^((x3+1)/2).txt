@@ -1,0 +1,15 @@
+Welcome to the summary of Remez 1 multi for multivariate polynomial approximation. 
+With the following parameters : 
+degree of approximation = 2
+maximum number of turns = 15
+approximation of error = 1.00001e-09
+approximation of points = 1.00001e-15
+x in = [[0,1][0,1][0,1]]
+For the function abs(ln(x1*x2+1)/(x1+0.5))*x2^((x3+1)/2).
+
+Generated D0 is : [0, 0, 0, ] [0, 0, 1, ] [0, 1, 0, ] [0, 1, 1, ] [0.5, 0.5, 0.5, ] [1, 0, 0, ] [1, 0, 1, ] [1, 1, 0, ] [1, 1, 1, ] Polynom = [0,0,0,0,0,0.69314718056,0.2430457253279,0,-0.4054651081081,-0.2430457253278] 
+Error step 1 : 0
+Error step 2 : 0.69314718056
+Distance between errors :0.69314718056
+
+Generated D0 is : [0, 0, 0, ] [0, 0, 1, ] [0, 1.86835e-11, 0, ] [0, 1.86835e-11, 1, ] [0, 1, 0, ] [0, 1, 1, ] [1.11023e-16, 1, 0, ] [1.11023e-16, 1, 1, ] [0.19215, 0.180124, 0, ] [0.298859, 0.181636, 1, ] [0.5, 0.5, 0.5, ] [1, 0, 0, ] [1, 0, 1, ] [1, 0.679782, 0, ] [1, 0.780873, 1, ] [1, 1, 0, ] [1, 1, 1, ] Polynom = [0.033622,-0.3119663828974,0.2447225667511,0.2235097778664,0,0.4696374026936,0.3987461465142,-8.774314608217e-12,-0.4054651081081,-0.3987461465141] 

@@ -1,0 +1,26 @@
+Welcome to the summary of Remez1+ for univariate polynomial approximation. 
+With the following parameters : 
+degree of approximation = 2
+size of first discretization =12
+maximum number of turns = 100
+approximation of error = 1.00001e-10
+approximation of points = 1.00001e-15
+x in [1,7]
+For the function 1/x.
+Step 1: 
+D=[1,1.54546,2.09091,2.63637,3.18182,3.72728,4.27273,4.81819,5.36364,5.9091,6.45455,7]
+Polynom = [1.32814,-0.4550568381577,0.04254072424705] 
+Error step1 =0.08437829602719
+Error step2 =0.0914015181797
+Step 2: 
+D=[1,1.54546,2.09091,2.63637,3.18182,3.72728,4.27273,4.81819,5.36364,5.9091,6.45455,7]
+Polynom = [1.32736,-0.4576822139494,0.04299196071124] 
+Error step1 =0.08733184379286
+Error step2 =0.08733381294266
+Step 3: 
+D=[1,1.54546,2.09091,2.63637,3.18182,3.72728,4.27273,4.81819,5.36364,5.9091,6.45455,7]
+Polynom = [1.32736,-0.4576823731982,0.04299202187098] 
+Error step1 =0.08733283388005
+Error step2 =0.08733283387934
+Step 4: 
+D=[1,1.54546,2.09091,2.63637,3.18182,3.72728,4.27273,4.81819,5.36364,5.9091,6.45455,7]

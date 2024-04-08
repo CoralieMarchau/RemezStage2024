@@ -48,6 +48,7 @@ struct Multivariate_RemezIIParameters {
   int maxNbTurns; //Failsafe
   double approximationResult;
   double approximationPoints; 
+  double approxError = 1.e-10;
 } Multivariate_RemezIIParameters;
 
 //Results of RemezII multivariate for comparisons and graphs
@@ -87,6 +88,14 @@ std::vector<std::vector<double>> step2_centerDIRECT(struct Multivariate_RemezIIP
 void createModelStep2Error(std::vector<double> A, struct Multivariate_RemezIIParameters remezdesc, string path);
 void grapheConvergenceComparisons(struct Multivariate_RemezIIResult remezResults);
 bool cheking_side_not_constant(struct Multivariate_RemezIIParameters remezdesc, int side, int var);
+void replaceAll(std::string& str, const std::string& from, const std::string& to);
+bool checkEquioscillationOptimal(struct Multivariate_RemezIIParameters remezdesc, string path);
+bool isItOverTest(struct Multivariate_RemezIIParameters remezdesc, string path, double errorStep1, double errorStep2);
+void maximaCheck(struct Multivariate_RemezIIParameters remezdesc, string path, double errorStep1, double errorStep2);
+std::vector<std::vector<double>> step2_borders(struct Multivariate_RemezIIParameters remezdesc, string path, int turn);
+void createModelStep2_border(struct Multivariate_RemezIIParameters remezdesc, int borner1, int borner2, string path, int var);
+void write_nbMaxima(struct Multivariate_RemezIIParameters remezdesc, string path, std::vector<std::vector<double>> newPoints, double errorStep1, double errorStep2);
+bool borderNotConstant(struct Multivariate_RemezIIParameters remezdesc, int var, int borner1, int borner2);
 /*-----------------------------------------------------------------*/
 /* FUNCTIONS TO APPROXIMATE */
 /*-----------------------------------------------------------------*/
@@ -123,7 +132,7 @@ double f3(std::vector<double> x) {
   return cos(x[2])*pow(1+x[0],x[1]);
 }
 struct Multivariate_functionDescription initializeF3(){
-  return initialize_fdesc("cos(x3)*(1+x1)^(x2)",{"x2*cos(x3)*(1+x1)^(x2-1)"," cos(x3)*(1+x1)^(x2)*ln(1+x1)","(-sin(x3)*(1+x1)^(x2))"},f3, {{0,1},{1, 2},{0,1}}, {true, true, true, true, false, true});
+  return initialize_fdesc("cos(x3)*(1+x1)^(x2)",{"x2*cos(x3)*(1+x1)^(x2-1)"," cos(x3)*ln(1+x1)*(1+x1)^(x2)","(-sin(x3)*(1+x1)^(x2))"},f3, {{0,1},{1, 2},{0,1}}, {false, true, true, true, false, true});
 }
 
 double f4(std::vector<double> x) {
@@ -154,9 +163,15 @@ double f8(std::vector<double> x) {
   return abs(log((x[0]*x[1]+1)/(x[0]+0.5)))*pow(x[1],(x[2]+1)/2);
 }
 struct Multivariate_functionDescription initializeF8(){
-  return initialize_fdesc("",{},f8, {{0,1},{0,1},{0,1}}, {true, true, false, true, true, true});
+  return initialize_fdesc("abs(ln(x1*x2+1)/(x1+0.5))*x2^((x3+1)/2)",{"((x2*(((sign((ln((1+(x1*x2)))/(0.5+x1)))*exp(((0.5+(0.5*x3))*ln(x2))))/(0.5+x1))/(1+(x1*x2))))-(((sign((ln((1+(x1*x2)))/(0.5+x1)))*exp(((0.5+(0.5*x3))*ln(x2))))*ln((1+(x1*x2))))/(0.5+x1)^2))","((x1*(((sign((ln((1+(x1*x2)))/(0.5+x1)))*exp(((0.5+(0.5*x3))*ln(x2))))/(0.5+x1))/(1+(x1*x2))))+(((0.5+(0.5*x3))*(abs((ln((1+(x1*x2)))/(0.5+x1)))*exp(((0.5+(0.5*x3))*ln(x2)))))/x2))","(0.5*((abs((ln((1+(x1*x2)))/(0.5+x1)))*exp(((0.5+(0.5*x3))*ln(x2))))*ln(x2)))"},f8, {{0,1},{0,1},{0,1}}, {false, true, false, false, true, false});
 }
 
+double fExp(std::vector<double> x) {
+  return exp(x[0])+x[1];
+}
+struct Multivariate_functionDescription initializeFExp(){
+  return initialize_fdesc("exp(x1)+x2",{"exp(x1)", "1"},fExp, {{0,1},{0,1}}, {false, false, true, true});
+}
 /*-----------------------------------------------------------------*/
 /* BASICS */
 /*-----------------------------------------------------------------*/
@@ -180,9 +195,21 @@ double error(struct Multivariate_Polynomiale A , std::vector<double> x, double (
 
 std::vector<double> phiBasique(std::vector<double> x, int degree){
   std::vector<double> p = {};
-  for(int i = 0; i<=degree; i=i+1){
-    for(int j = 0; j<=degree-i; j=j+1){
-      p.push_back(pow(x[0],i)*pow(x[1],j));
+  if(x.size() == 2){
+    for(int i = 0; i<=degree; i=i+1){
+      for(int j = 0; j<=degree-i; j=j+1){
+        p.push_back(pow(x[0],i)*pow(x[1],j));
+      }
+    }
+  } else {
+    if(x.size() == 3){
+      for(int i = 0; i<=degree; i=i+1){
+        for(int j = 0; j<=degree-i; j=j+1){
+          for(int k = 0; k<=degree-i-j; k=k+1){
+            p.push_back(pow(x[0],i)*pow(x[1],j)*pow(x[2],k));
+          }
+        }
+      }
     }
   }
   return p;
@@ -192,14 +219,23 @@ std::vector<std::vector<int>> phiBasiqueDerivated(int nbX, int degree){
   std::vector<std::vector<int>> powOfX = {};
   std::vector<std::vector<int>> temp = {};
   std::vector<std::vector<int>>  prev = {std::vector<int>(nbX, 0.0)};
-  for(int i = 0; i<=degree; i=i+1){
-    for(int j = 0; j<=degree-i; j=j+1){
-      powOfX.push_back({i,j});
+  if(nbX == 2){
+    for(int i = 0; i<=degree; i=i+1){
+      for(int j = 0; j<=degree-i; j=j+1){
+        powOfX.push_back({i,j});
+      }
     }
   }
-  
+  if(nbX == 3){
+    for(int i = 0; i<=degree; i=i+1){
+      for(int j = 0; j<=degree-i; j=j+1){
+        for(int k = 0; k<=degree-i-j; k=k+1){
+          powOfX.push_back({i,j,k});
+        }
+      }
+    }
+  }
   return powOfX;
-  
 }
 
 struct Multivariate_Polynomiale initializePhiBasic(){
@@ -224,7 +260,7 @@ struct Multivariate_RemezIIParameters initialize_remezdesc(struct Multivariate_f
   struct Multivariate_RemezIIParameters remezdesc;
   remezdesc.approximationDegree = degree;
   remezdesc.maxNbTurns = nbTurns;
-  remezdesc.approximationResult = 1.e-10;
+  remezdesc.approximationResult = 1.e-9;
   remezdesc.approximationPoints = 1.e-15;
   remezdesc.fdesc = fdesc;
   return remezdesc;
@@ -262,40 +298,225 @@ int main(int argc, char** argv) {
   struct Multivariate_RemezIIResult results;
   results = initialize_results(nbTurns, path);
   int typeOfD0 = 1;
-  remezdesc = initialize_remezdesc(initializeF6_7(), degree, nbTurns);
+  remezdesc = initialize_remezdesc(initializeF1(), degree, nbTurns);
   remezdesc.poly = initializePhiBasic();
   remezdesc.poly.degree = degree;
   write_introduction(path, remezdesc);
   
-  //for(int i = typeOfD0; i<=4; i++){
-    //int i = 5;
     std::vector<std::vector<double>> D ;
-    int nbPoints = 5;
+    int nbPoints = 16;
       
       D = noCopyAdd(step0_random(5-nbPoints, remezdesc, remezdesc.fdesc), step0(remezdesc.fdesc.nbX, remezdesc, remezdesc.fdesc));
-    		std::vector<double> phi;
-  for(int j = 0; j<nbTurns; j++){
+    std::vector<double> phi;
+    		
+  int turn = 0;
+  bool notFinished = true;
+  while(turn < nbTurns && notFinished){
     writeD(remezdesc, D, path);
     remezdesc.poly.a = step1(D, remezdesc.fdesc, remezdesc, remezdesc.poly);
-      
+       
   //Taking the error out of the polynomial
     errorStep1 = remezdesc.poly.a[remezdesc.poly.a.size()-1];
     remezdesc.poly.a.pop_back();
   
     writePolynom(remezdesc.poly.a, path, remezdesc);
   //createErrorGraph(remezdesc, path);
-    write_data_for_graphs(remezdesc.poly.a, remezdesc.fdesc.bornersVar, j+1);
+    write_data_for_graphs(remezdesc.poly.a, remezdesc.fdesc.bornersVar, turn+1);
      
-    newPoints = step2(remezdesc.poly.a, remezdesc, path, j+1);
+    newPoints = step2(remezdesc.poly.a, remezdesc, path, turn+1);
     errorStep2 = step2Error(newPoints, remezdesc.poly.a, remezdesc, path);
     D = noCopyAdd(newPoints, D);
     writeErrors(errorStep1, errorStep2, remezdesc, path);
     results.errorStep1.push_back(errorStep1);
     results.errorStep2.push_back(errorStep2);
-   //}
+    //write_nbMaxima(remezdesc, path, newPoints, errorStep1, errorStep2);
     cout << "\n---------------------------------------------------------------\n";
+    notFinished = !(isItOverTest(remezdesc, path, errorStep1, errorStep2));
+    turn = turn + 1;
   }
+  results.nbTurns = turn;
   grapheConvergenceComparisons(results);
+  maximaCheck(remezdesc, path, errorStep1, errorStep2);
+}
+
+
+void write_nbMaxima(struct Multivariate_RemezIIParameters remezdesc, string path, std::vector<std::vector<double>> newPoints, double errorStep1, double errorStep2){
+  double e = 0.0;
+  int nbMax = 0;
+  for(int i = 0; i<newPoints.size(); i++){
+    e = error(remezdesc.poly, newPoints[i], remezdesc.fdesc.f);
+    if(e <= errorStep2 && e >= errorStep1){
+      nbMax += 1;
+    }
+    cout << "\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH\n";
+    cout << e << endl;
+  }
+  std::ofstream summary;
+  summary.open(path + "summary/" + remezdesc.fdesc.functionString + ".txt", std::ios_base::app);
+  summary << "\nNb of maxima : " << nbMax << "\n";  
+}
+
+
+void maximaCheck(struct Multivariate_RemezIIParameters remezdesc, string path, double errorStep1, double errorStep2){
+  std::vector<double> A = remezdesc.poly.a;
+  ofstream step2(path + "models/maximaCheck.txt");
+  step2 << setprecision(13);
+  step2 << "Variables\n";
+  for(int i = 0; i<remezdesc.fdesc.bornersVar.size(); i++){
+    step2 << "  x"<< i+1 <<" in [" << remezdesc.fdesc.bornersVar[i][0] <<" , " << remezdesc.fdesc.bornersVar[i][1] <<"];\n";
+  }
+  step2 << "\nConstraints\n";
+  step2 << "abs(";
+  step2 << remezdesc.fdesc.functionString << "-(";
+  std::vector<std::vector<int>> p = remezdesc.poly.derivatedPhi(remezdesc.fdesc.bornersVar.size(), remezdesc.approximationDegree);
+  for(int i = 0; i < A.size(); i++){
+    step2 << "+(" << A[i] << ")" ;
+    for(int j = 0; j < p[i].size(); j++){
+      if(p[i][j] != 0){
+        step2 << "*(x" << j+1 << "^(" << p[i][j] << "))";
+      }
+    }
+  }
+  step2 << ")) >=" << errorStep1 - 1e-4 << ";\n";
+  
+  /*step2 << "abs(";
+  step2 << remezdesc.fdesc.functionString << "-(";
+  for(int i = 0; i < A.size(); i++){
+    step2 << "+(" << A[i] << ")" ;
+    for(int j = 0; j < p[i].size(); j++){
+      if(p[i][j] != 0){
+        step2 << "*(x" << j+1 << "^(" << p[i][j] << "))";
+      }
+    }
+  }
+  step2 << ")) <=" << errorStep2 << ";\n";*/
+  step2 << "end";
+  step2.close(); 
+  string fullpath = path + "models/maximaCheck.txt";
+  System system(fullpath.c_str());
+  DefaultSolver solver(system,1e-3);
+  solver.solve(system.box);
+  solver.report();
+  std::ofstream data;
+  data.open("data/extremas.txt",  std::ofstream::trunc);
+  
+  std::vector<double> pt = {};
+  std::vector<std::vector<double>> newPoints = {};
+  std::vector<std::vector<double>> points = {};
+  std::vector<double> point= {};
+  cout << "\n";
+  for(int i = 0; i<solver.get_data().size(); i++){
+    cout << "[";
+    for(int j = 0; j<solver.get_data()[i].size(); j++){
+      pt.push_back(solver.get_data()[i][j].lb());
+      pt.push_back(solver.get_data()[i][j].ub());
+      data << solver.get_data()[i][j].lb() << " " << solver.get_data()[i][j].ub() << " ";
+      points.push_back(pt);
+      p = {};
+      cout << solver.get_data()[i][j].mid() << ",";
+    }
+    data << " \n";
+    cout << "] ,";
+    newPoints.push_back(point);
+    point = {};
+  }
+  
+  /*
+  points = noCopyAdd(points, newPoints);
+  for(int i = 0; i<points.size(); i++){
+    cout << "[";
+    for(int j = 0; j<points[i].size(); j++){
+      cout << points[i][j] << ",";
+    }
+    cout << "] ,";
+  }
+  cout << "\n";*/
+  cout << points.size() << endl;
+}
+
+bool isItOverTest(struct Multivariate_RemezIIParameters remezdesc, string path, double errorStep1, double errorStep2){
+  //Possibilities : error distance is too weak or optimality condition reached
+  bool over = false; 
+  //Check equioscillation optimal = not implemented, should be condition of if
+  //checkEquioscillationOptimal(remezdesc, path);
+  if(false){
+    over = true;
+    cout << "end by optimality";
+  } else {
+    over = (errorStep2 - errorStep1 <= remezdesc.approxError);
+    if(over){
+      cout << "\nend by closeness of errors\n";
+    }
+  }
+  return over; 
+}
+
+bool checkEquioscillationOptimal(struct Multivariate_RemezIIParameters remezdesc, string path){
+  //Ibex min :
+  //variables : n+1 point xi
+  //constantes : polynome a
+  //min ecart absolu au poly parfait
+  //contraintes : abs(e(a,xi))*ui >= 0
+  //contraintes : sum(ui*M(j,i)) = 0 pour tt j
+  string f = remezdesc.fdesc.functionString;
+  replaceAll(f, "x1", "x00");
+  replaceAll(f, "x2", "x01");
+  ofstream osci(path + "models/osci.txt");
+  osci << setprecision(13);
+  osci << "Constants\n";
+  for(int i = 0; i<remezdesc.poly.a.size(); i++){
+    osci << "a" << i << "=" << remezdesc.poly.a[i] <<";\n";
+  }
+  osci << "Variables\n";
+  for(int i = 0; i<remezdesc.approximationDegree+1; i++){ //either degree or possibly size a
+    for(int j=0; j<remezdesc.fdesc.bornersVar.size(); j++){
+      osci << "x" << i << j << " in [" << remezdesc.fdesc.bornersVar[j][0] <<" , " << remezdesc.fdesc.bornersVar[j][1] <<"];\n";
+    }
+  }
+  for(int i = 0; i<remezdesc.approximationDegree + 1; i++){ //either degree or possibly size a
+    osci << "u" << i << " in [0, +oo];\n";
+  }
+  osci << "Constraints\n";
+  std::vector<double> A = remezdesc.poly.a;
+  std::vector<std::vector<int>> p = remezdesc.poly.derivatedPhi(remezdesc.fdesc.bornersVar.size(), remezdesc.approximationDegree);
+  for(int i = 0; i<remezdesc.approximationDegree+1; i++){
+    osci << "abs(" << f << "-(";
+    for(int k = 0; k < A.size(); k++){
+      osci << "+(" << A[k] << ")" ;
+      for(int j = 0; j < p[k].size(); j++){
+        if(p[i][j] != 0){
+          osci << "*(x" << i << j+1 << "^(" << p[k][j] << "))";
+        }
+      }
+    }
+    osci << "))*u" << i << ">=0;\n";
+    replaceAll(f, "x"+to_string(i)+"0", "x"+to_string(i+1)+"0");
+    replaceAll(f, "x"+to_string(i)+"1", "x"+to_string(i+1)+"1");
+  }
+  
+  osci << "0";
+  for(int j=0; j<remezdesc.fdesc.bornersVar.size(); j++){
+    for(int i = 0; i<remezdesc.approximationDegree+1; i++){
+      osci << "+u" << i << "*" << "x" << i << j;
+    }
+    osci << "=0;\n";
+  }
+  for(int i = 0; i<remezdesc.approximationDegree+1; i++){
+    osci << "u" << i << "+";
+  }
+  osci << "=0;\n";
+  
+  return false;
+}
+
+void replaceAll(std::string& str, const std::string& from, const std::string& to) {
+    if(from.empty())
+        return;
+    size_t start_pos = 0;
+    while((start_pos = str.find(from, start_pos)) != std::string::npos) {
+        str.replace(start_pos, from.length(), to);
+        start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
+    }
 }
 
 /*-----------------------------------------------------------------*/
@@ -456,11 +677,142 @@ std::vector<std::vector<double>> step2(std::vector<double> A, struct Multivariat
   //Getting the points
   pointsCenter = step2_center(remezdesc, path, turn);
   pointsSide = step2_side(remezdesc, path, turn);
-  
+  if(remezdesc.fdesc.bornersVar.size() == 3){
+    std::vector<std::vector<double>> pointsBorders = {};
+    pointsBorders = step2_borders(remezdesc, path, turn);
+    pointsCenter.insert(pointsCenter.end(), pointsBorders.begin(), pointsBorders.end());
+  }
   //Getting every points together
   pointsCenter.insert(pointsCenter.end(), pointsSide.begin(), pointsSide.end());
- 
   return pointsCenter; 
+}
+
+std::vector<std::vector<double>> step2_borders(struct Multivariate_RemezIIParameters remezdesc, string path, int turn){
+  std::ofstream data;
+  data.open("data/"+to_string(turn)+"points.txt",  std::ios_base::app);
+  std::vector<std::vector<double>> newPoints = {};
+  std::vector<double> point;
+  string fullpath = path + "models/step2_model_border.txt";
+  //Seeing which border is checked
+  for(int i = 0; i  < remezdesc.fdesc.bornersVar.size(); i++){
+    if(borderNotConstant(remezdesc, i, 0, 0)){
+      createModelStep2_border(remezdesc, 0, 0, path, i);
+      System system1(fullpath.c_str());
+      DefaultSolver solver1(system1,1e-10, 1e-15);
+      solver1.solve(system1.box);
+      solver1.report();
+      for(int i = 0; i<solver1.get_data().size(); i++){
+        for(int j = 0; j<solver1.get_data()[i].size(); j++){
+          point.push_back(solver1.get_data()[i][j].mid());
+          data << solver1.get_data()[i][j].mid() << " ";
+        }
+        data << "\n";
+        newPoints.push_back(point);
+        point = {};
+      }
+    }
+    if(borderNotConstant(remezdesc, i, 1, 0)){
+      createModelStep2_border(remezdesc, 1, 0, path, i);
+      System system2(fullpath.c_str());
+      DefaultSolver solver2(system2,1e-10, 1e-15);
+      solver2.solve(system2.box);
+      solver2.report();
+      for(int i = 0; i<solver2.get_data().size(); i++){
+        for(int j = 0; j<solver2.get_data()[i].size(); j++){
+          point.push_back(solver2.get_data()[i][j].mid());
+          data << solver2.get_data()[i][j].mid() << " ";
+        }
+        data << "\n";
+        newPoints.push_back(point);
+        point = {};
+      }
+    }
+    if(borderNotConstant(remezdesc, i, 0, 1)){
+      createModelStep2_border(remezdesc, 0, 1, path, i);
+      System system3(fullpath.c_str());
+      DefaultSolver solver3(system3,1e-10, 1e-15);
+      solver3.solve(system3.box);
+      solver3.report();
+      for(int i = 0; i<solver3.get_data().size(); i++){
+        for(int j = 0; j<solver3.get_data()[i].size(); j++){
+          point.push_back(solver3.get_data()[i][j].mid());
+          data << solver3.get_data()[i][j].mid() << " ";
+        }
+        data << "\n";
+        newPoints.push_back(point);
+        point = {};
+      }
+    }
+    if(borderNotConstant(remezdesc, i, 1, 1)){
+      createModelStep2_border(remezdesc, 1, 1, path, i);
+      System system(fullpath.c_str());
+      DefaultSolver solver(system,1e-10, 1e-15);
+      solver.solve(system.box);
+      solver.report();
+      for(int i = 0; i<solver.get_data().size(); i++){
+        for(int j = 0; j<solver.get_data()[i].size(); j++){
+          point.push_back(solver.get_data()[i][j].mid());
+          data << solver.get_data()[i][j].mid() << " ";
+        }
+        data << "\n";
+        newPoints.push_back(point);
+        point = {};
+      }
+    }
+  }
+  return newPoints;
+}
+
+void createModelStep2_border(struct Multivariate_RemezIIParameters remezdesc, int borner1, int borner2, string path, int var){
+  ofstream step2(path + "models/step2_model_border.txt");
+  std::vector<double> A = remezdesc.poly.a;
+  step2 << setprecision(13);
+  bool firstX = false;
+  step2 << "Variables\n";
+  for(int i = 0; i<remezdesc.fdesc.bornersVar.size(); i++){
+    if(i == var){
+      step2 << "  x"<< i+1 <<" in [" << remezdesc.fdesc.bornersVar[i][0] <<" , " << remezdesc.fdesc.bornersVar[i][1] <<"];\n";
+    } else {
+      if (firstX){
+        step2 << "  x"<< i+1 <<" in [" << remezdesc.fdesc.bornersVar[i][borner2] <<" , " << remezdesc.fdesc.bornersVar[i][borner2] <<"];\n";
+      } else {
+        step2 << "  x"<< i+1 <<" in [" << remezdesc.fdesc.bornersVar[i][borner1] <<" , " << remezdesc.fdesc.bornersVar[i][borner1] <<"];\n";
+        firstX = true;
+      }
+    }
+  }
+  step2 << "\nConstraints\n";
+  std::vector<std::vector<int>> p = remezdesc.poly.derivatedPhi(remezdesc.fdesc.bornersVar.size(), remezdesc.approximationDegree);
+  
+  for(int i = 0; i<remezdesc.fdesc.bornersVar.size(); i++){
+    if(i==var){
+      step2 << remezdesc.fdesc.derivedFunctionStrings[i] << "-("; //derivated of f depending xi
+      for(int j=0; j<p.size(); j++){//P'(x) depending of each x
+        if(p[j][i]>0){
+          step2 << " + " << A[j] ;
+          for(int k=0; k<p[j].size(); k++){
+            if(k==i){
+              if(p[j][k]>1){
+                step2 << "*((x" << k+1 << "*" << p[j][k] << ")^" << p[j][k]-1 << ")";
+               }
+             } else {
+               if(k!=var){
+                 if(p[j][k]!=0){
+                   step2 << "*((x" << k+1 << ")^" << p[j][k] << ")";
+                  }
+                }else{
+                  if(p[j][k]>=1){
+                    step2 << "*((x" << k+1 << ")^" << p[j][k] << ")";
+                  }
+                }
+              }
+          }
+        }
+      }
+      step2 << ")=0;\n"; 
+    }
+  }
+  step2 << "end";
 }
 
 std::vector<std::vector<double>> step2_side(struct Multivariate_RemezIIParameters remezdesc, string path, int turn){
@@ -475,7 +827,7 @@ std::vector<std::vector<double>> step2_side(struct Multivariate_RemezIIParameter
     
       fullpath = path + "models/step2_model_side.txt";
       System system(fullpath.c_str());
-      DefaultSolver solver(system,1e-09, 1e-15);
+      DefaultSolver solver(system,1e-10, 1e-15);
       solver.solve(system.box);
       solver.report();
       for(int i = 0; i<solver.get_data().size(); i++){
@@ -493,7 +845,7 @@ std::vector<std::vector<double>> step2_side(struct Multivariate_RemezIIParameter
     
       fullpath = path + "models/step2_model_side.txt";
       System system2(fullpath.c_str());
-      DefaultSolver solver2(system2,1e-09, 1e-15);
+      DefaultSolver solver2(system2,1e-010, 1e-15);
       solver2.solve(system2.box);
       solver2.report();
     
@@ -527,31 +879,35 @@ void createModelStep2_side(std::vector<double> A, struct Multivariate_RemezIIPar
   std::vector<std::vector<int>> p = remezdesc.poly.derivatedPhi(remezdesc.fdesc.bornersVar.size(), remezdesc.approximationDegree);
   
   
-  int i = 1 - var;
-  step2 << remezdesc.fdesc.derivedFunctionStrings[i] << "-("; //derivated of f depending xi
-  for(int j=0; j<p.size(); j++){//P'(x) depending of each x
-    if(p[j][i]>0){
-      step2 << " + " << A[j] ;
-      for(int k=0; k<p[j].size(); k++){
-        if(k==i){
-          if(p[j][k]>1){
-            step2 << "*((x" << k+1 << "*" << p[j][k] << ")^" << p[j][k]-1 << ")";
-           }
-         } else {
-           if(k==var){
-             if(p[j][k]!=0){
-               step2 << "*((" << borner << ")^" << p[j][k] << ")";
+  //int i = 1 - var;
+  for(int i = 0; i<remezdesc.fdesc.bornersVar.size(); i++){
+    if(i!=var){
+      step2 << remezdesc.fdesc.derivedFunctionStrings[i] << "-("; //derivated of f depending xi
+      for(int j=0; j<p.size(); j++){//P'(x) depending of each x
+        if(p[j][i]>0){
+          step2 << " + " << A[j] ;
+          for(int k=0; k<p[j].size(); k++){
+            if(k==i){
+              if(p[j][k]>1){
+                step2 << "*((x" << k+1 << "*" << p[j][k] << ")^" << p[j][k]-1 << ")";
+               }
+             } else {
+               if(k==var){
+                 if(p[j][k]!=0){
+                   step2 << "*((" << borner << ")^" << p[j][k] << ")";
+                  }
+                }else{
+                  if(p[j][k]>=1){
+                    step2 << "*((x" << k+1 << ")^" << p[j][k] << ")";
+                  }
+                }
               }
-            }else{
-              if(p[j][k]>=1){
-                step2 << "*((x" << k+1 << ")^" << p[j][k] << ")";
-              }
-            }
           }
+        }
       }
+      step2 << ")=0;\n"; 
     }
   }
-    step2 << ")=0;\n"; 
   step2 << "end";
 }
 
@@ -563,7 +919,7 @@ std::vector<std::vector<double>> step2_center(struct Multivariate_RemezIIParamet
   createModelStep2(remezdesc.poly.a, remezdesc, path);
   string fullpath = path + "models/step2_model.txt";
   System system(fullpath.c_str());
-  DefaultSolver solver(system,1e-09, 1e-15);
+  DefaultSolver solver(system,1e-10, 1e-15);
   solver.solve(system.box);
   solver.report();
   for(int i = 0; i<solver.get_data().size(); i++){
@@ -680,19 +1036,83 @@ void createModelStep2Error(std::vector<double> A, struct Multivariate_RemezIIPar
   step2.close(); 
 }
 
+bool borderNotConstant(struct Multivariate_RemezIIParameters remezdesc, int var, int borner1, int borner2){
+  bool doSide = false;
+  int firstToDerive = -1;
+  int secondToDerive = -1;
+  for(int i = 0; i < remezdesc.fdesc.nbX; i++){
+    if(i!=var){
+      if(firstToDerive != -1){
+        secondToDerive = i;
+      } else {
+        firstToDerive = i;
+      }
+    }
+  }
+  bool needToCheck = !(remezdesc.fdesc.notConstantDerived[firstToDerive*2 + borner1]);
+  needToCheck = needToCheck || !(remezdesc.fdesc.notConstantDerived[secondToDerive*2 + borner2]);
+  if(needToCheck){
+    std::vector<std::vector<int>> p = remezdesc.poly.derivatedPhi(remezdesc.fdesc.bornersVar.size(), remezdesc.approximationDegree);
+    for(int i = 0; i < p.size(); i++){
+      if(p[i][var] > 1 && remezdesc.poly.a[i] != 0){
+        if(!((p[i][firstToDerive] > 0 && remezdesc.fdesc.bornersVar[firstToDerive][borner1] == 0) || (p[i][secondToDerive] > 0 && remezdesc.fdesc.bornersVar[secondToDerive][borner2] == 0))){
+          doSide = true; 
+        }
+      }
+    }
+    return doSide;
+  } else {
+    return true;
+  }
+}
+
 bool cheking_side_not_constant(struct Multivariate_RemezIIParameters remezdesc, int side, int var){
   bool doSide = remezdesc.fdesc.notConstantDerived[side];
+  
   if(!remezdesc.fdesc.notConstantDerived[side]){
     doSide = false;
     std::vector<std::vector<int>> p = remezdesc.poly.derivatedPhi(remezdesc.fdesc.bornersVar.size(), remezdesc.approximationDegree);
-    for(int i = 0; i < p.size(); i++){
-      if(p[i][(var+1)%2] > 1 && remezdesc.poly.a[i] != 0){
-        doSide = true;
+    if(remezdesc.fdesc.nbX == 2){
+      for(int i = 0; i < p.size(); i++){
+        if(p[i][(var+1)%2] > 1 && remezdesc.poly.a[i] != 0){
+          if(!(p[i][var] > 0 && remezdesc.fdesc.bornersVar[var][side%remezdesc.fdesc.nbX] == 0)){
+            doSide = true; 
+          }
+        }
       }
+    } else {
+      bool doOneSide = false;
+      bool isVarOneUsed = false;
+      int whoIsVarOne = -1;
+      bool isVarTwoUsed = false;
+      doSide = true;
+      int nbX = remezdesc.fdesc.nbX;
+      for(int i = 0; i < p.size(); i++){
+        for(int j = 0; j < p[i].size(); j++){
+          if(j != var){
+            if(p[i][j] > 1 && remezdesc.poly.a[i] != 0){
+            if(!(p[i][var] > 0 && remezdesc.fdesc.bornersVar[var][(var*2)%nbX + side%nbX] == 0)){
+              doOneSide = true; 
+              if(j != whoIsVarOne){
+                if(whoIsVarOne != -1){
+                  isVarTwoUsed = true;
+                }else{
+                  whoIsVarOne = j;
+                  isVarOneUsed = true;
+                }
+              }
+            }
+            }
+          }
+        }
+        doSide = doSide || doOneSide;
+      }
+      doSide = doSide && isVarOneUsed && isVarTwoUsed;
     }
   }
   
   return doSide;
+   
 }
 
 /*-----------------------------------------------------------------*/
@@ -828,7 +1248,6 @@ void createErrorGraph(struct Multivariate_RemezIIParameters remezdesc, string pa
 }
 
 
-
 void grapheConvergenceComparisons(struct Multivariate_RemezIIResult remezResults){
   string graphName = "../resultsOfSteps/multi/GrapheConvergenceAll.pdf";
   string output = "";
@@ -858,7 +1277,7 @@ void grapheConvergenceComparisons(struct Multivariate_RemezIIResult remezResults
   plot.ylabel("Convergence");
   plot.xrange(1., maxNbTurns-1);
   plot.yrange(*min_element(conv.begin(), conv.end()), *max_element(conv.begin(), conv.end()));
-
+  cout << "\n" << *min_element(conv.begin(), conv.end());
   plot.legend()
     .atOutsideBottom()
     .displayHorizontal()

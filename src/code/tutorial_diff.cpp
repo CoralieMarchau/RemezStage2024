@@ -6,7 +6,7 @@ using namespace ibex;
 int main(int argc, char* argv[]){
 
   // Dérivée symbolique directement sortie de la doc
-  Function f("x","y", "ln(x+y)*sin(x)");
+  Function f("x","y", "1/(x+2*y+4)");
 	Function df(f,Function::DIFF);
 	cout << "df=" << df << endl;
 	//Function df2(df,Function::DIFF);
