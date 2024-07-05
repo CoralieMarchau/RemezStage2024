@@ -21,7 +21,7 @@ For Basic, we find the x for which the function |P(a,x)-f(x)| is at the biggest 
 For Exchange, we ensure to have as little point in the set as possible (n+2 with n = degree of approximation). For that, the new found point will be exchanged with one in the set. 
 For Plus, instead of finding one x, we use the derived variable to find all extremum and had them in the set.
 
--Remez 1 Multivariate : WIP (see version4)
+-Remez 1 Multivariate : voir version4
 
 
 Necessary installment :

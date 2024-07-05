@@ -94,7 +94,7 @@ double step2(std::vector<double> A, struct Univariate_RemezIParameters remezdesc
 //Creates the graph of convergence of the two errors
 void grapheConvergenceRemez1(std::vector<double> errorStep1, std::vector<double> errorStep2, int nbTurns, string path);
 //Creates the graph of error between f(x) and P(a,x)
-void grapheError(std::vector<double> A, string function, int turn, int degree, std::vector<double> borners, double errorMax, string path);
+void grapheError(std::vector<double> A, string function, int turn, int degree, std::vector<double> borners, std::vector<double> pointsX, std::vector<double> pointsY, double errorMax, string path);
 //Creates the graph with the logarithmic convergence of the distance between the two errors
 void logGrapheConvergence(std::vector<double> errorStep1, std::vector<double> errorStep2, string path);
 //Function of exchanges
@@ -115,9 +115,11 @@ void grapheConvergenceComparisons(std::vector<struct Univariate_RemezIResult>rem
 /* FUNCTIONS TO APPROXIMATE */
 /*-----------------------------------------------------------------*/
 double f(double x) {
- // return cos(x)+sin(5*x)+pow(x,2);
- // return exp(x);
- return (1/x);
+  return sqrt(x);
+ //return cos(x)+sin(5*x)+pow(x,2);
+ //return exp(x);
+// return (1/x);
+ // return cos(x);
 }
 
 double P(std::vector<double> A, double x){
@@ -139,22 +141,28 @@ double error(std::vector<double> A, double x){
 
 struct Univariate_functionDescription initialize_fdesc(){
   struct Univariate_functionDescription fdesc;
+  fdesc.functionString = "sqrt(x)";
+  fdesc.derivedFunctionString = "1/2*sqrt(x)";
   //fdesc.functionString = "cos(x)+sin(5*x)+x^2";
   //fdesc.derivedFunctionString = "-sin(x)+5*cos(5*x)+2*x";
-  fdesc.functionString = "1/x";
-  fdesc.derivedFunctionString = "-1/(x^2)";
+  //fdesc.functionString = "cos(x)";
+  //fdesc.derivedFunctionString = "-sin(x)";
+  //fdesc.functionString = "1/x";
+  //fdesc.derivedFunctionString = "-1/(x^2)";
+  //fdesc.functionString = "exp(x)";
+  //fdesc.derivedFunctionString = "exp(x)";
   fdesc.f = (*f);
   return fdesc;
 }
 
 struct Univariate_RemezIParameters initialize_remezdesc(struct Univariate_functionDescription fdesc){
   struct Univariate_RemezIParameters remezdesc;
-  remezdesc.approximationDegree = 2;
-  remezdesc.sizeD0 = 12; //Warning, if exchange, sizeD0 value will be replaced by degree+2
+  remezdesc.approximationDegree = 4;
+  remezdesc.sizeD0 = 5; //Warning, if exchange, sizeD0 value will be replaced by degree+2
   remezdesc.maxNbTurns = 100;
-  remezdesc.approximationResult = 1.e-10;
-  remezdesc.approximationPoints = 1.e-15;
-  remezdesc.bornersVar = {1 , 7}; //Warning, remember to put in crescent order
+  remezdesc.approximationResult = 1.e-20;
+  remezdesc.approximationPoints = 1.e-20;
+  remezdesc.bornersVar = {0 , 1}; //Warning, remember to put in crescent order
   remezdesc.fdesc = fdesc;
   remezdesc.remezPlus = false ;
   remezdesc.exchange = false ; // Warning, if remezPlus, exchange must be ignored.
@@ -201,6 +209,9 @@ struct Univariate_RemezIResult univariateRemez(struct Univariate_RemezIParameter
   std::vector<double> D = {}; //Discretized set of points
   bool itIsNotOver = true ; //Stopping condition
   
+  std::vector<double> pointsX = {};
+  std::vector<double> pointsY = {};
+  
   double newPoint; //Used only if !(remezPlus)
   std::vector<double> newPoints = {}; //Used only if remezPlus
   
@@ -219,9 +230,15 @@ struct Univariate_RemezIResult univariateRemez(struct Univariate_RemezIParameter
     A.pop_back();
     if(remezdesc.remezPlus){
       newPoints = step2Plus(A, remezdesc, path); //finds all extremum of error function
+      pointsX = newPoints;
+      pointsY = {};
+      for(int i = 0; i<newPoints.size(); i++){
+        pointsY.push_back(error(A, newPoints[i]));
+      }
       itIsNotOver = isThereNewPoints(newPoints, D, remezdesc.approximationPoints);
       D = addNewPoints(newPoints, D, remezdesc.approximationPoints); //Adds all new points in D
       errorStep2.push_back(errorMax(newPoints, A));
+      
     } else {
       newPoint = step2(A, remezdesc, path); //Search where biggest error for polynomial
       itIsNotOver = isItANewPoint(newPoint, D, remezdesc.approximationPoints);
@@ -231,11 +248,15 @@ struct Univariate_RemezIResult univariateRemez(struct Univariate_RemezIParameter
       else{
         D.push_back(newPoint); //Otherwhise, add the new point to discretized set
       }
+      pointsX = {};
+      pointsY = {};
+      pointsX.push_back(newPoint);
+      pointsY.push_back(error(A,newPoint));
       errorStep2.push_back(error(A, newPoint)); //Will lower toward e*
     }
     writeErrorStep2(errorStep2[errorStep2.size()-1], path, remezdesc);
     turn = turn + 1;
-    grapheError(A, remezdesc.fdesc.functionString, turn, remezdesc.approximationDegree, remezdesc.bornersVar, errorStep2[errorStep2.size()-1], path);
+    grapheError(A, remezdesc.fdesc.functionString, turn, remezdesc.approximationDegree, remezdesc.bornersVar, pointsX, pointsY, errorStep2[errorStep2.size()-1], path);
     //Checking if a new turn is needed
     itIsNotOver = itIsNotOver && turn < remezdesc.maxNbTurns;
     itIsNotOver = itIsNotOver && (abs(errorStep2[errorStep2.size()-1]-errorStep1[errorStep1.size()-1]) > remezdesc.approximationResult);
@@ -532,7 +553,7 @@ double errorMax(std::vector<double> newPoints, std::vector<double> A){
 /* FUNCTIONS GRAPHS CREATIONS*/
 /*-----------------------------------------------------------------*/
 
-void grapheError(std::vector<double> A, string function, int turn, int degree, std::vector<double> borners, double errorMax, string path){
+void grapheError(std::vector<double> A, string function, int turn, int degree, std::vector<double> borners, std::vector<double> pointsX, std::vector<double> pointsY, double errorMax, string path){
   string graphName = function + to_string(turn) + "AproximationRemez1";
   graphName = path + graphName;
   graphName += ".pdf";
@@ -541,20 +562,28 @@ void grapheError(std::vector<double> A, string function, int turn, int degree, s
   std::vector<double> e = {};
   
   for(int i=0; i<x.size(); i++){
-    e.push_back(P(A,x[i])-f(x[i]));
+    e.push_back(-(P(A,x[i])-f(x[i])));
   }
   
   Plot2D plot;
   plot.xlabel("x");
   plot.ylabel("y");
-  plot.xrange(borners[0], borners[1]);
-  plot.yrange(-errorMax , errorMax);
+  plot.xrange(borners[0]-0.05, borners[1]+0.05);
+  plot.yrange(-errorMax-(errorMax*0.05) , errorMax+(errorMax*0.05));
   
   plot.legend()
     .atOutsideBottom()
     .displayHorizontal()
     .displayExpandWidthBy(2);
   plot.drawCurve(x, e).label("error");
+  
+  pointsY = {};
+  for(int i=0; i<pointsX.size(); i++){
+    pointsY.push_back(-(P(A,pointsX[i])-f(pointsX[i])));
+  }
+  
+  plot.drawPoints(pointsX, pointsY).label("points added");
+  
   Figure fig = {{plot}};
   Canvas canvas = {{fig}};
   canvas.save(graphName);
@@ -649,7 +678,7 @@ void grapheConvergenceComparisons(std::vector<struct Univariate_RemezIResult>rem
   Plot2D plot;
   plot.xlabel("Turn");
   plot.ylabel("Convergence");
-  plot.xrange(0., maxNbTurns-1);
+  plot.xrange(1., maxNbTurns-1);
   plot.yrange(*min_element(conv.begin(), conv.end()), *max_element(conv.begin(), conv.end()));
 
   plot.legend()

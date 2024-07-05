@@ -1,0 +1,23 @@
+Welcome to the summary of Remez 1 multi for multivariate polynomial approximation. 
+With the following parameters : 
+degree of approximation = 2
+maximum number of turns = 15
+approximation of error = 1.00001e-09
+approximation of points = 1.00001e-15
+x in = [[-1,1][-1,1]]
+For the function x1^4 + x2^4.
+
+Generated D0 is : [-1, -1, ] [-1, 1, ] [0, 0, ] [1, -1, ] [1, 1, ] Polynom = [0,0,2,0,0,0] 
+Error step 1 : 0
+Error step 2 : 1
+Distance between errors :1
+
+Generated D0 is : [-1, -1, ] [-1, 0, ] [-1, 1, ] [0, -1, ] [0, -0.999999, ] [0, 0, ] [0, 1, ] [0, 1, ] [1, -1, ] [1, 0, ] [1, 1, ] Polynom = [0,0,1,0,0,1] 
+Error step 1 : 0
+Error step 2 : 0.4999999999992
+Distance between errors :0.4999999999992
+
+Generated D0 is : [-1, -1, ] [-1, -0.707106, ] [-1, 0, ] [-1, 0.707107, ] [-1, 1, ] [-0.707106, -1, ] [-0.707106, -0.707106, ] [-0.707106, 0, ] [-0.707106, 0.707107, ] [-0.707106, 1, ] [0, -1, ] [0, -0.999999, ] [0, -0.707106, ] [0, 0, ] [0, 0.707107, ] [0, 1, ] [0, 1, ] [0.707107, -1, ] [0.707107, -0.707106, ] [0.707107, 0, ] [0.707107, 0.707107, ] [0.707107, 1, ] [1, -1, ] [1, -0.707106, ] [1, 0, ] [1, 0.707107, ] [1, 1, ] Polynom = [-0.249999,-4.357881996052623737e-33,0.999999999999999778,-4.357881996052623737e-33,4.357881996052623738e-33,1] 
+Error step 1 : 0.25
+Error step 2 : 0.25
+Distance between errors :-9.989231664064e-14

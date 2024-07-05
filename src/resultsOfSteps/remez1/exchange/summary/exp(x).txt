@@ -1,36 +1,21 @@
 Welcome to the summary of Exchange Remez 1 for univariate polynomial approximation. 
 With the following parameters : 
-degree of approximation = 2
+degree of approximation = 1
 size of first discretization =12
 maximum number of turns = 100
 approximation of error = 1.00001e-10
 approximation of points = 1.00001e-15
-x in [0,1]
+x in [-0.25,2]
 For the function exp(x).
 Step 1: 
-D=[0,0.333334,0.666667,1]
-Polynom = [1.00774,0.8591980181046,0.8436045652162] 
-Error step1 =0.007739622569162
-Error step2 =0.009731124353432
+D=[-0.25,0.875,2]
+Polynom = [0.670748,2.937891251493] 
+Error step1 =0.842526573517
+Error step2 =0.8989978534335
 Step 2: 
-D=[0,0.333334,0.766981,1]
-Polynom = [1.00851,0.8530851087309,0.8481892472465] 
-Error step1 =0.008503736240878
-Error step2 =0.009296423447558
+D=[-0.25,1.07769,2]
+Polynom = [0.642512,2.937891251493] 
+Error step1 =0.8707622134752
+Error step2 =0.8707622134881
 Step 3: 
-D=[0,0.267058,0.766981,1]
-Polynom = [1.00876,0.8547438509986,0.8460265545546] 
-Error step1 =0.008755711452978
-Error step2 =0.00875630484465
-Step 4: 
-D=[0,0.267058,0.765372,1]
-Polynom = [1.00876,0.8547418929039,0.8460280999424] 
-Error step1 =0.008755917806415
-Error step2 =0.008756244479512
-Step 5: 
-D=[0,0.265758,0.765372,1]
-Polynom = [1.00876,0.854742573424,0.8460272108055] 
-Error step1 =0.008756022114844
-Error step2 =0.008756022114844
-Step 6: 
-D=[0,0.265758,0.765372,1]
+D=[-0.25,1.0777,2]

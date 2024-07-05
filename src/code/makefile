@@ -23,7 +23,7 @@ CXXFLAGS := $(CXXFLAGS) -std=c++11
 all: $(BINS)
 
 % :	%.cpp
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $< $(LIBS) -lglpk -lsoplex -lz -std=c++17 -I /usr/include/x86_64-linux-gnu -L /usr/lib/x86_64-linux-gnu -lgmp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $< $(LIBS) -lglpk -lsoplex -lgmp -lgmpxx -lz -std=c++17 -I /usr/include/x86_64-linux-gnu -L /usr/lib/x86_64-linux-gnu 
 
 clean:
 	rm -f $(BINS)
